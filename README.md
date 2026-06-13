@@ -1,131 +1,121 @@
-# iptv-spider-sh
+<div align="center">
 
-📺 **上海电信 IPTV 抓取程序**
-用于抓取 IPTV **EPG 节目单** 和 **M3U8 播放地址**。
+<img src="https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat&logo=go" alt="Go">
+<img src="https://img.shields.io/badge/License-MIT-green?style=flat" alt="License">
+<img src="https://img.shields.io/badge/Platform-Linux%20|%20Windows%20|%20OpenWrt-blue?style=flat" alt="Platform">
 
-📌 禁止利用本项目提供商业化行为，例如闲鱼和公司等盈利服务和所谓的技术支持。代安装，和代理服务，一经发现删库跑路
+</div>
 
-⚠️ 禁止任何途径宣传本项目和贴链接，例如小红书，和各种论坛社交媒体，qq群吹牛装逼行为，请务必低调使用，请勿张扬，唯一链接授权：恩山论坛：公子薛
+# 📺 sh-tel-iptv-spider
 
-📌 使用本软件需要一定的技术水平能力，如果你是纯小白，提交问题请你写清楚，白痴问题，和伸手党行为一律无视
+上海电信 IPTV 抓取程序 —— 自动抓取 **EPG 节目单** 与 **M3U8 播放地址**，并写入 MySQL。
 
 ---
 
-# 📌 环境要求
+## ⚠️ 使用须知
 
-运行本程序需要满足以下条件：
+> 🔒 **请务必遵守以下规则，否则将停止维护。**
 
-1. 上海电信 **IPTV 机顶盒及账号，你必须开通iptv服务，获得机顶盒唯一账号，只有账号参与认证，其他参数符合格式就行了，白嫖组播的用户可以不需要往下看了**
-2. **MySQL 数据库**
-3. 能够访问 **IPTV 专网并且解决路由问题**
+- ❌ **禁止商业化**：不得用于闲鱼、公司等盈利服务，包括代安装、代理服务
+- ❌ **禁止宣传**：不得在任何平台（小红书、论坛、QQ 群等）宣传本项目或贴链接
+- 🤫 **低调使用，请勿张扬**
+- 📌 唯一授权发布：**恩山论坛 - 公子薛**
+- 📌 使用本程序需要一定技术水平，伸手党、白痴问题一律无视
 
-⚠️ **重要说明**
-
-由于 IPTV 网络属于运营商专网限制：
-
-* 程序必须在 **可以访问 IPTV 专网的网络环境** 中运行
-* 程序访问的所有 IPTV 地址 **必须走专网出口**
-* **公网环境无法抓取**
-* **回放地址同样需要专网访问**
-* **回放地址无法分享，上海电信采用iptv地址与回放权健绑定逻辑。理论上只要ip不变化，权健不会过期，所以回放只能本人用**
 ---
 
-# 🚀 安装使用
+## 📋 环境要求
 
-| 文件名    | 平台       |
-| ------- | --------- |
-| sh-tel-iptv-spider_linux_386|Linux-x86-32位 |
-| sh-tel-iptv-spider_linux_amd64|Linux-x86-64位 | 
-| sh-tel-iptv-spider_linux_arm |Linux-Arm-32位 |
-| sh-tel-iptv-spider_linux_arm64|Linux-Arm-64位 |
-| sh-tel-iptv-spider_windows_386.exe|windows-32位 |
-|sh-tel-iptv-spider_windows_amd64.exe|windows-64位 |
+| 依赖 | 说明 |
+|------|------|
+| 上海电信 IPTV 机顶盒 | 已开通 IPTV 服务，获取机顶盒账号 |
+| MySQL 数据库 | 存储频道、EPG、认证信息 |
+| IPTV 专网访问 | 需解决路由，确保能访问专网 |
 
-## OpenWrt 用户
+> ⚠️ **重要**：程序必须在能访问 IPTV 专网的环境运行，公网无法抓取。回放地址与权健绑定，仅限本人使用。
 
-由于 OpenWrt 默认缺少时区数据，需要安装 `zoneinfo`：
+---
+
+## 🚀 快速开始
+
+### 下载二进制
+
+| 文件 | 平台 |
+|------|------|
+| `sh-tel-iptv-spider_linux_386` | Linux x86 32位 |
+| `sh-tel-iptv-spider_linux_amd64` | Linux x86 64位 |
+| `sh-tel-iptv-spider_linux_arm` | Linux ARM 32位 |
+| `sh-tel-iptv-spider_linux_arm64` | Linux ARM 64位 |
+| `sh-tel-iptv-spider_windows_386.exe` | Windows 32位 |
+| `sh-tel-iptv-spider_windows_amd64.exe` | Windows 64位 |
+
+### OpenWrt 用户
 
 ```bash
+# 安装时区数据（OpenWrt 默认缺少）
 opkg update
 opkg install zoneinfo-asia
 ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-```
 
-然后运行程序：
-
-```bash
+# 运行
 ./iptv-spider-sh
 ```
 
+### 配置文件
+
+编辑 `config.yaml`，填入 MySQL 连接信息、IPTV 认证参数以及自定义频道映射，启动即可。
 
 ---
 
-# ⚙️ 程序说明
+## ⚙️ 功能说明
 
-* 程序使用 **Go 语言编写**
-* 编译后为 **单一可执行文件**
-* 支持 Linux / OpenWrt / Windows 等系统运行
+- **语言**：Go，编译为单一可执行文件
+- **跨平台**：Linux / OpenWrt / Windows
 
-程序功能：
-
-1. 抓取 IPTV **频道列表**
-2. 抓取 **EPG 节目数据**
-3. 抓取 **M3U8 播放地址**
-4. 自动写入 **MySQL 数据库**
-
-数据库结构请参考源码中的 **建表 SQL**。
+| 功能 | 说明 |
+|------|------|
+| 📡 频道列表 | 自动抓取 IPTV 频道信息 |
+| 📅 EPG 节目单 | 抓取节目数据并入库 |
+| 🎬 M3U8 地址 | 生成播放列表，支持自定义频道映射 |
+| 🗄️ 数据持久化 | 全部写入 MySQL 数据库 |
+| 🌐 Web 监控 | 内置状态页面，支持在线查看频道、下载 M3U8/EPG |
 
 ---
 
-# 📂 数据存储
+## 📂 数据库结构
 
-抓取到的数据会存储到 **MySQL 数据库**：
+| 表名 | 说明 |
+|------|------|
+| `auth_infos` | 认证权健存储 |
+| `channel_infos` | 频道列表 |
+| `channels` | 频道源地址 |
+| `epg_details` | 节目单详情 |
+| `m3u8_mappings` | 频道分组映射 |
 
-| 数据类型    | 说明        |
-| ------- | --------- |
-| auth_infos | 权健存储      |
-| channel_infos     | 频道列表  
-| channels  | 频道源 |
-| epg_details | 节目单 |
-| m3u8_mappings| 频道分组 |
-
-
-数据库表结构请查看源码中的 SQL。
+> 建表 SQL 请查看源码。
 
 ---
 
-# ⚠️ 使用限制
+## ⚠️ 限制
 
-目前仅支持：
-
-* **上海电信 IPTV**
-
-不支持：
-
-* 其他地区电信 IPTV
-* 联通 IPTV
-* 移动 IPTV
+- ✅ 仅支持 **上海电信 IPTV**
+- ❌ 不支持其他地区电信 / 联通 / 移动
 
 ---
 
-# 🤝 贡献
+## 🤝 贡献
 
-代码写得比较随意 😅
+代码写得比较随意 😅，欢迎：
 
-欢迎有兴趣的同学：
-
-* Fork 项目
-* 提交 PR
-* 改进代码
-* 提出 Issue
+- Fork 项目
+- 提交 PR
+- 提出 Issue
 
 ---
 
-# 📄 免责声明
+## 📄 免责声明
 
-1. 本程序 **仅供学习与研究使用**
-2. **禁止用于商业用途**
-3. 使用本程序产生的任何法律问题 **与作者无关**
-4. 使用本程序即表示 **同意自行承担风险**
-
----
+1. 本程序仅供学习与研究使用
+2. 禁止用于商业用途
+3. 使用本程序产生的任何法律问题与作者无关
+4. 使用即表示同意自行承担风险
