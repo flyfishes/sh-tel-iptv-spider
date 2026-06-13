@@ -7,17 +7,18 @@
 </div>
 
 # 📺 sh-tel-iptv-spider
-上海电信 IPTV 抓取程序 —— 自动抓取 **EPG 节目单** 与 **M3U8 播放地址**，并写入 MySQL。
 
 ![](demo.gif)
+
+上海电信 IPTV 抓取程序 —— 自动抓取 **EPG 节目单** 与 **M3U8 播放地址**，并写入 MySQL。
 
 ---
 
 ## ⚠️ 使用须知
 
-> 🔒 **请务必遵守以下规则，否则将停止维护,并且删库**
+> 🔒 **请务必遵守以下规则，否则将停止维护。**
 
-- ❌ **禁止商业化**：不得用于闲鱼、公司等盈利服务，包括代安装、将网站通过反向代理，实现代理服务
+- ❌ **禁止商业化**：不得用于闲鱼、公司等盈利服务，包括代安装、代理服务
 - ❌ **禁止宣传**：不得在任何平台（小红书、论坛、QQ 群等）宣传本项目或贴链接
 - 🤫 **低调使用，请勿张扬**
 - 📌 唯一授权发布：**恩山论坛 - 公子薛**
@@ -60,6 +61,46 @@ ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 # 运行
 ./iptv-spider-sh
+```
+
+### OpenWrt 后台常驻（procd）
+
+创建服务脚本 `/etc/init.d/iptv-spider`：
+
+```bash
+#!/bin/sh /etc/rc.common
+
+START=99
+USE_PROCD=1
+
+PROG=/root/sh-tel-iptv-spider_linux_amd64
+CONFIG=/root/config.yaml
+
+start_service() {
+    procd_open_instance
+    procd_set_param command "$PROG" -c "$CONFIG"
+    procd_set_param respawn          # 进程挂了自动重启
+    procd_set_param stdout 1         # 输出到 logread
+    procd_set_param stderr 1
+    procd_close_instance
+}
+```
+
+然后：
+
+```bash
+chmod +x /etc/init.d/iptv-spider
+/etc/init.d/iptv-spider enable    # 开机自启
+/etc/init.d/iptv-spider start     # 立即启动
+```
+
+常用管理命令：
+
+```bash
+/etc/init.d/iptv-spider status    # 查看运行状态
+/etc/init.d/iptv-spider restart   # 重启服务
+/etc/init.d/iptv-spider stop      # 停止服务
+logread | grep iptv-spider        # 查看日志
 ```
 
 ### 配置文件
