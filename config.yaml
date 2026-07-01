@@ -19,56 +19,12 @@ stb:
 #http://192.168.0.131:8888/api/tsM3u8
 #http://192.168.0.131:8888/api/epg
 
-epg:
-  generator: 'Deny'
-  source: 'Shanghai Telecom Iptv Spider'
-  xml_url: 'http://192.168.0.131:8888/api/epg'
-  fetch_cron: '0 0 8,16,23 * * *'
-  rtsp_url: 'http://192.168.0.131:5140/rtsp/'
-  rtp_url: 'http://192.168.0.131:5140/rtp/'
-  logo_url: 'http://192.168.0.131:5140/logo/'
-  #时移参数
-  playseek: "&playseek={utc:YmdHMS}-{utcend:YmdHMS}"
-  #自定义获取频道，针对节目单列表没有的频道
-  channel_mappings:
-    - id: '721'                            #tvg-id
-      igmp: 'igmp://233.18.204.169:5140'  #组播地址                           
-      name: "BesTV4K电影"                 #定义名称 #tvg-name
-      logo: "BesTV4K电影.png"             #定义图片名称
-      group: "BesTV4K电影"                #显示名称
-    - id: '723'                           #tvg-id
-      igmp: 'igmp://233.18.204.171:5140'  #组播地址                           
-      name: "BesTV4K动画"                 #定义名称 #tvg-name
-      logo: "BesTV4K动画.png"             #定义图片名称
-      group: "BesTV4K动画" 
-    - id: '722'                           #tvg-id
-      igmp: 'igmp://233.18.204.170:5140'  #组播地址                           
-      name: "BesTV4K记录"                 #定义名称 #tvg-name
-      logo: "BesTV4K记录.png"             #定义图片名称
-      group: "BesTV4K记录" 
-    - id: '198'                           #tvg-id
-      igmp: 'igmp://233.18.204.116:5140'  #组播地址                           
-      name: "BesTV电影介绍"                #定义名称 #tvg-name
-      logo: "BesTV电影介绍.png"            #定义图片名称
-      group: "BesTV电影介绍" 
-
-#排序表
-  name_sequence: 
-    - name: "BesTV4K电影"
-    - name: "BesTV4K动画"
-    - name: "BesTV4K记录"
-    - name: "BesTV电影介绍"
-    - name: "CCTV16"
-    - name: "CCTV4K"
-    - name: "欢笑剧场4K"
-    - name: "测试"
-
-#oss:
-#  enable: false
-#  upload_cron: '0 20 0,8,16 * * *' # 每天 0，8，16 点 20 分执行
-#  endpoint: 'https://xxxxxxxxxx.cos.ap-shanghai.myqcloud.com'
-#  access-key: 'xxxxxxxxx'
-#  secret-key: 'xxxxxxxxx'
+#相关api
+#例子
+#http://192.168.0.131:8888/api/m3u8
+#http://192.168.0.131:8888/api/epg
+#http://192.168.0.131:8888/api/schedule
+# EPG 配置已迁移至 Web 界面管理（/api/epg/config），首次启动时自动初始化默认值
 
 oss:
   enable: true
@@ -103,9 +59,8 @@ mysql:
   log-mode: 'error'
   log-zap: false
 
-# zap logger configuration
 zap:
-  level: 'info'
+  level: 'debug'
   format: 'console'
   prefix: '[iptv-spider-sh]'
   director: 'log'
