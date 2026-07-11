@@ -13,12 +13,13 @@ stb:
   type: 'B860A' # 机顶盒型号
   auth_host: '222.68.208.73:7001' # 认证服务器地址
   # OpenWrt SSH 配置（可选），用于自动检测 IPTV 专网接口 IP 变化并触发重认证
-  # 配置后，每 1 分钟 SSH 到 OpenWrt 检测 DHCP IP 是否变化，变化则自动重认证
+  # 配置后，每 5 分钟 SSH 到 OpenWrt 检测 DHCP IP 是否变化，变化则自动重认证
   openwrt_host: '192.168.0.x'         # OpenWrt 路由器 IP，如 192.168.1.1
   openwrt_port: 22         # SSH 端口，默认 22
   openwrt_user: 'root'     # SSH 用户名
-  openwrt_pass: 'xxxxxxxx'         # SSH 密码
+  openwrt_pass: 'xxxxxx'         # SSH 密码
   openwrt_if: 'wan.85'       # IPTV 专网接口名称，如 eth0.85、iptv、pppoe-iptv
+
 #相关api
 #例子
 #http://192.168.0.131:8888/api/m3u8
