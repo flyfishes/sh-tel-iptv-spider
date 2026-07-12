@@ -3,9 +3,6 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"go.uber.org/zap"
-	"gorm.io/gorm/clause"
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/model"
 	"iptv-spider-sh/modules/http_client"
@@ -13,6 +10,10 @@ import (
 	"iptv-spider-sh/utils"
 	"net/http"
 	"net/url"
+
+	"github.com/PuerkitoBio/goquery"
+	"go.uber.org/zap"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -42,11 +43,20 @@ type Client struct {
 	model.AuthInfo
 }
 
-func (c *Client) authSetupOne() *goquery.Document {
+func (c *Client) authSetupOne() (*goquery.Document, error) {
 	global.LOG.Info("认证流程一")
 	doc := c.pre4kLogAuth()
+	if doc == nil {
+		return nil, fmt.Errorf("pre4kLogAuth Failed")
+	}
 	doc = c.r4kLogAuth(doc)
+	if doc == nil {
+		return nil, fmt.Errorf("r4kLogAuth Failed")
+	}
 	doc = c.ottAuth(doc)
+	if doc == nil {
+		return nil, fmt.Errorf("ottAuth Failed")
+	}
 	channels := c.processChannel(doc)
 	// 频道列表入库
 	global.DB.Clauses(clause.OnConflict{
@@ -54,7 +64,7 @@ func (c *Client) authSetupOne() *goquery.Document {
 		UpdateAll: true,
 	}).Create(&channels)
 	c.htmlDocTemp = doc
-	return doc
+	return doc, nil
 }
 
 func (c *Client) authSetupTwo() (*goquery.Document, error) {
@@ -79,7 +89,10 @@ func (c *Client) authSetupTwo() (*goquery.Document, error) {
 
 func (c *Client) StartAuth() error {
 	global.LOG.Info("开始认证流程")
-	c.authSetupOne()
+	_, error := c.authSetupOne()
+	if error != nil {
+		return error
+	}
 	_, err := c.authSetupTwo()
 	return err
 }
@@ -91,7 +104,7 @@ func (c *Client) HeartBeat() {
 	c.httpClient.Request(uri, "GET", nil)
 }
 
-func (c *Client) fetchAuthInfoFormDB() {
+func (c *Client) fetchAuthInfoFormDB() error {
 	global.LOG.Info("从数据库获取 AuthInfo")
 	global.DB.Find(&c.AuthInfo, c.AuthInfo)
 	if c.AuthInfo.ID > 0 {
@@ -99,14 +112,15 @@ func (c *Client) fetchAuthInfoFormDB() {
 		err := c.checkSessionState()
 		if err != nil {
 			global.LOG.Error("从数据库获取 AuthInfo 失败", zap.Any("Msg", err.Error()))
-			return
+			return err
 		}
 	} else {
 		err := c.StartAuth()
 		if err != nil {
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 func (c *Client) updateCookies() {
@@ -157,8 +171,8 @@ func NewClient(uid, sn, mac, ip string, options ...ClientOption) (*Client, error
 	}
 	c.httpClient = http_client.NewHttpClient(http_client.WithUserAgent(c.userAgent))
 	c.UID = uid
-	c.fetchAuthInfoFormDB()
-	return c, nil
+	err := c.fetchAuthInfoFormDB()
+	return c, err
 }
 
 func NewGlobalClient(uid, sn, mac, ip string, options ...ClientOption) (client *Client, err error) {

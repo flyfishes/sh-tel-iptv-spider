@@ -3,13 +3,17 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"iptv-spider-sh/global"
 	"net/url"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 func CreateHtmlDocByBytes(uri string, resp []byte) *goquery.Document {
+	if len(bytes.TrimSpace(resp)) == 0 {
+		return nil
+	}
 	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(resp))
 	doc.Url, _ = url.Parse(uri)
 	if err != nil {

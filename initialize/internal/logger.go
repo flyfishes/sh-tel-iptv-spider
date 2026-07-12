@@ -7,9 +7,10 @@ import (
 	"os"
 	"time"
 
+	"iptv-spider-sh/global"
+
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
-	"iptv-spider-sh/global"
 )
 
 type config struct {
@@ -22,7 +23,7 @@ var (
 	Default = New(log.New(os.Stdout, "\r\n", log.LstdFlags), config{
 		SlowThreshold: 200 * time.Millisecond,
 		LogLevel:      logger.Warn,
-		Colorful:      true,
+		Colorful:      false,
 	})
 )
 

@@ -2,11 +2,12 @@ package http_client
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"iptv-spider-sh/global"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/go-resty/resty/v2"
 )
 
 type HttpClient struct {
@@ -24,12 +25,11 @@ func (c *HttpClient) Request(uri, method string, form map[string]string) *HttpCl
 	case "POST":
 		r.SetFormData(form)
 	}
-	global.LOG.Debug(fmt.Sprintf("%s %s", method, uri))
+	global.LOG.Debug(fmt.Sprintf("%s %s Data: %v", method, uri, form))
 	var err error
 	c.resp, err = r.Execute(method, uri)
 	if err != nil {
-		global.LOG.Error(fmt.Sprintf("%s %s", method, uri))
-		global.LOG.Error(err.Error())
+		global.LOG.Error(fmt.Sprintf("%s", err.Error()))
 	}
 	global.LOG.Debug(fmt.Sprintf("Resp Body: %s", string(c.resp.Body())))
 	return c

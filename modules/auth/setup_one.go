@@ -2,10 +2,11 @@ package auth
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/robertkrimen/otto"
 	"iptv-spider-sh/model"
 	"iptv-spider-sh/utils"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/robertkrimen/otto"
 )
 
 func (c *Client) pre4kLogAuth() *goquery.Document {
@@ -25,7 +26,9 @@ func (c *Client) r4kLogAuth(doc *goquery.Document) *goquery.Document {
 	uri, method, formMap := utils.GetFromParamByHtml(doc)
 	resp := c.httpClient.Request(uri, method, formMap)
 	respDoc := utils.CreateHtmlDocByBytes(uri, resp.GetRespBytes())
-	c.R4kLoginHost = respDoc.Url.Host
+	if respDoc != nil {
+		c.R4kLoginHost = respDoc.Url.Host
+	}
 	return respDoc
 }
 

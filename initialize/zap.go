@@ -2,12 +2,13 @@ package initialize
 
 import (
 	"fmt"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/utils"
 	"os"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var level zapcore.Level
@@ -38,7 +39,8 @@ func Zap() (logger *zap.Logger) {
 	}
 
 	if level == zap.DebugLevel || level == zap.ErrorLevel {
-		logger = zap.New(getEncoderCore(), zap.AddStacktrace(level))
+		//AddStacktrace设置zap.ErrorLevel，这样只有 Error 及以上级别的日志才会打印堆栈
+		logger = zap.New(getEncoderCore(), zap.AddStacktrace(zap.ErrorLevel))
 	} else {
 		logger = zap.New(getEncoderCore())
 	}
