@@ -1,0 +1,46 @@
+name: Build for OpenWrt 24.04
+
+on:
+  workflow_dispatch:  # 手动触发
+  push:              # 可选：推送到 main 分支时自动构建
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          # aarch64_cortex-a53 (你的 OpenWrt 设备)
+          - { goos: linux, goarch: arm64, name: aarch64_cortex-a53 }
+          # x86_64 (通用 x86 设备)
+          - { goos: linux, goarch: amd64, name: x86_64 }
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'  # 根据项目实际 go.mod 调整
+
+      - name: Build for OpenWrt
+        env:
+          GOOS: ${{ matrix.target.goos }}
+          GOARCH: ${{ matrix.target.goarch }}
+          CGO_ENABLED: 0  # 静态编译，不依赖外部库
+        run: |
+          echo "Building for ${{ matrix.target.name }} (GOOS=$GOOS, GOARCH=$GOARCH)"
+          go mod download
+          # 编译并压缩二进制体积
+          go build -ldflags="-s -w" -o sh-tel-iptv-spider_${{ matrix.target.name }} .
+          ls -lh sh-tel-iptv-spider_*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sh-tel-iptv-spider-${{ matrix.target.name }}
+          path: sh-tel-iptv-spider_${{ matrix.target.name }}
