@@ -1,8 +1,8 @@
-name: Build for OpenWrt 24.04
+name: Build for OpenWrt 24.04 and Windows x86
 
 on:
-  workflow_dispatch:  # 手动触发
-  push:              # 推送到 main 分支时自动构建
+  workflow_dispatch:
+  push:
     branches:
       - main
 
@@ -12,24 +12,26 @@ jobs:
     strategy:
       matrix:
         target:
-          # aarch64_cortex-a53 (你的 OpenWrt 设备)
-          - { goos: linux, goarch: arm64, name: aarch64_cortex-a53 }
-          # x86_64 (通用 x86 设备)
-          - { goos: linux, goarch: amd64, name: x86_64 }
+          # OpenWrt 设备 - aarch64_cortex-a53
+          - { goos: linux, goarch: arm64, name: aarch64_cortex-a53, ext: "" }
+          # OpenWrt 设备 - x86_64
+          - { goos: linux, goarch: amd64, name: openwrt_x86_64, ext: "" }
+          # Windows - x86_64
+          - { goos: windows, goarch: amd64, name: windows_x86_64, ext: ".exe" }
       fail-fast: false
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取完整历史，用于生成版本号
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
 
-      - name: Build for OpenWrt
+      - name: Build for target
         env:
           GOOS: ${{ matrix.target.goos }}
           GOARCH: ${{ matrix.target.goarch }}
@@ -38,24 +40,31 @@ jobs:
           echo "Building for ${{ matrix.target.name }} (GOOS=$GOOS, GOARCH=$GOARCH)"
           echo "Go version: $(go version)"
           go mod download
-          go build -ldflags="-s -w" -o sh-tel-iptv-spider_${{ matrix.target.name }} .
-          ls -lh sh-tel-iptv-spider_*
+          
+          # 构建二进制文件
+          BINARY_NAME="sh-tel-iptv-spider_${{ matrix.target.name }}${{ matrix.target.ext }}"
+          go build -ldflags="-s -w -extldflags '-static'" -o "$BINARY_NAME" .
+          
+          # 打包为 zip
+          zip "${BINARY_NAME}.zip" "$BINARY_NAME"
+          
+          # 显示文件信息
+          ls -lh *.zip
 
       - name: Upload artifacts (临时存储)
         uses: actions/upload-artifact@v4
         with:
           name: sh-tel-iptv-spider-${{ matrix.target.name }}
-          path: sh-tel-iptv-spider_${{ matrix.target.name }}
-          retention-days: 7  # 临时文件保留7天
+          path: sh-tel-iptv-spider_${{ matrix.target.name }}*.zip
+          retention-days: 7
+          if-no-files-found: error
 
-  # 🆕 新增：创建 Release 并上传所有产物
   create-release:
-    needs: build  # 等待编译任务完成
+    needs: build
     runs-on: ubuntu-latest
-    # 只在 main 分支推送时创建 Release，手动触发时也创建
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
-      contents: write  # 需要写入权限创建 Release
+      contents: write
     
     steps:
       - name: Checkout code
@@ -66,22 +75,36 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./artifacts  # 下载到 artifacts 目录
+          path: ./artifacts
 
-      - name: List downloaded files
+      - name: 重组文件结构
         run: |
-          echo "📦 Downloaded artifacts:"
-          ls -la ./artifacts/
-          # 检查每个子目录
-          for dir in ./artifacts/*/; do
-            echo "📁 $dir:"
-            ls -la "$dir"
+          echo "📦 原始下载结构:"
+          find ./artifacts -type f
+          
+          # 创建临时目录
+          mkdir -p ./release_files
+          
+          # 复制所有 zip 文件
+          find ./artifacts -type f -name "*.zip" | while read file; do
+            filename=$(basename "$file")
+            cp "$file" "./release_files/${filename}"
+          done
+          
+          echo "📦 重组后的文件:"
+          ls -la ./release_files/
+          
+          # 计算文件大小
+          echo "📊 文件大小信息:"
+          for file in ./release_files/*; do
+            size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
+            size_mb=$(echo "scale=2; $size/1024/1024" | bc)
+            echo "$(basename $file): ${size_mb} MB"
           done
 
       - name: Generate release tag and name
         id: version
         run: |
-          # 生成版本号：日期时间 + 短 commit hash
           DATE=$(date +'%Y%m%d')
           TIME=$(date +'%H%M%S')
           SHORT_SHA=$(git rev-parse --short HEAD)
@@ -89,31 +112,42 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "name=Release ${TAG}" >> $GITHUB_OUTPUT
           
-          # 生成 Release 说明
           cat > release_notes.md << EOF
           ## 📋 版本信息
           - **Commit**: ${SHORT_SHA}
           - **构建时间**: $(date +'%Y-%m-%d %H:%M:%S')
           - **构建分支**: ${GITHUB_REF_NAME}
           
-          ## 📦 包含架构
-          - **aarch64_cortex-a53**: 适用于 Cortex-A53 64位 ARM 设备（如你的 OpenWrt 路由器）
-          - **x86_64**: 适用于 x86_64 架构设备（软路由、虚拟机等）
+          ## 📦 包含平台
+          
+          ### 🐧 OpenWrt/Linux 版本
+          - **sh-tel-iptv-spider_aarch64_cortex-a53.zip**: 适用于 Cortex-A53 64位 ARM 设备（你的 OpenWrt 路由器）
+          - **sh-tel-iptv-spider_openwrt_x86_64.zip**: 适用于 x86_64 架构 OpenWrt 设备（软路由、虚拟机等）
+          
+          ### 🪟 Windows 版本
+          - **sh-tel-iptv-spider_windows_x86_64.zip**: 适用于 Windows 64位系统（Windows 10/11, Windows Server）
           
           ## 🚀 使用方法
-          1. 下载对应架构的二进制文件
-          2. 上传到 OpenWrt 设备：\`scp sh-tel-iptv-spider_<架构> root@192.168.1.1:/root/\`
-          3. 赋予执行权限：\`chmod +x /root/sh-tel-iptv-spider_<架构>\`
-          4. 运行程序：\`/root/sh-tel-iptv-spider_<架构> -h\`
+          
+          ### OpenWrt/Linux
+          1. 下载对应架构的 zip 文件
+          2. 解压：\`unzip sh-tel-iptv-spider_<架构>.zip\`
+          3. 上传到设备：\`scp sh-tel-iptv-spider_<架构> root@192.168.1.1:/root/\`
+          4. 赋予执行权限：\`chmod +x /root/sh-tel-iptv-spider_<架构>\`
+          5. 运行程序：\`/root/sh-tel-iptv-spider_<架构> -h\`
+          
+          ### Windows
+          1. 下载 \`sh-tel-iptv-spider_windows_x86_64.zip\`
+          2. 解压到任意目录
+          3. 打开命令提示符或 PowerShell
+          4. 进入解压目录，运行：\`sh-tel-iptv-spider_windows_x86_64.exe -h\`
           
           ## ⚠️ 注意事项
-          - 此版本为静态编译，不依赖外部库
-          - 确保 OpenWrt 设备能访问上海电信 IPTV 专网
+          - 所有版本均为静态编译，不依赖外部库
+          - OpenWrt 版本需要能访问上海电信 IPTV 专网
           - 需要配置 MySQL 数据库连接
+          - 如有问题，请查看项目文档或提交 Issue
           EOF
-          
-          echo "📝 Release notes prepared:"
-          cat release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -125,13 +159,12 @@ jobs:
           prerelease: false
           generate_release_notes: false
           files: |
-            ./artifacts/*/sh-tel-iptv-spider_*
-          
-          # 如果使用 token（默认使用 GITHUB_TOKEN）
+            ./release_files/*.zip
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 显示 Release 创建信息
         run: |
           echo "✅ Release 创建成功！"
           echo "🔗 访问地址: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
-          echo "📦 Tag: ${{ steps.version.outputs.tag }}"
+          echo "📦 上传的文件:"
+          ls -la ./release_files/
