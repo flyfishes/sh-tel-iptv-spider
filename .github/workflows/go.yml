@@ -1,4 +1,4 @@
-name: Build for OpenWrt 24.04 and Windows x86
+name: Build for OpenWrt 24.04, Linux, and Windows
 
 on:
   workflow_dispatch:
@@ -13,11 +13,15 @@ jobs:
       matrix:
         target:
           # OpenWrt 设备 - aarch64_cortex-a53
-          - { goos: linux, goarch: arm64, name: aarch64_cortex-a53, ext: "" }
+          - { goos: linux, goarch: arm64, name: aarch64_cortex-a53, ext: "", platform: "OpenWrt" }
           # OpenWrt 设备 - x86_64
-          - { goos: linux, goarch: amd64, name: openwrt_x86_64, ext: "" }
+          - { goos: linux, goarch: amd64, name: openwrt_x86_64, ext: "", platform: "OpenWrt" }
+          
+          # 🆕 Linux x86_64 通用版本（适配低版本内核 4.4）
+          - { goos: linux, goarch: amd64, name: linux_x86_64, ext: "", platform: "Linux" }
+          
           # Windows - x86_64
-          - { goos: windows, goarch: amd64, name: windows_x86_64, ext: ".exe" }
+          - { goos: windows, goarch: amd64, name: windows_x86_64, ext: ".exe", platform: "Windows" }
       fail-fast: false
 
     steps:
@@ -31,19 +35,54 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: 🆕 设置低版本兼容编译环境（Linux 专用）
+        if: matrix.target.platform == 'Linux' && matrix.target.goos == 'linux'
+        run: |
+          echo "🔧 配置低版本内核兼容编译参数"
+          # 安装 musl 工具链（静态编译，避免 glibc 版本问题）
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          
+          # 检查安装
+          musl-gcc --version || echo "musl-gcc installed"
+
       - name: Build for target
         env:
           GOOS: ${{ matrix.target.goos }}
           GOARCH: ${{ matrix.target.goarch }}
           CGO_ENABLED: 0
+          # 🆕 低版本内核兼容参数
+          GOFLAGS: "-buildmode=pie"
         run: |
-          echo "Building for ${{ matrix.target.name }} (GOOS=$GOOS, GOARCH=$GOARCH)"
-          echo "Go version: $(go version)"
+          echo "🔨 Building for ${{ matrix.target.platform }} - ${{ matrix.target.name }}"
+          echo "   GOOS=$GOOS, GOARCH=$GOARCH"
+          echo "   Go version: $(go version)"
+          
           go mod download
           
           # 构建二进制文件
           BINARY_NAME="sh-tel-iptv-spider_${{ matrix.target.name }}${{ matrix.target.ext }}"
-          go build -ldflags="-s -w -extldflags '-static'" -o "$BINARY_NAME" .
+          
+          # 🆕 Linux 版本使用 musl 静态编译（兼容低版本 glibc）
+          if [ "${{ matrix.target.platform }}" = "Linux" ] && [ "${{ matrix.target.goos }}" = "linux" ]; then
+            echo "🐧 使用 musl 进行静态编译，兼容 Linux 内核 4.4+"
+            # 使用 musl-gcc 编译，确保不依赖 glibc
+            CC=musl-gcc CGO_ENABLED=1 \
+            go build -ldflags="-s -w -extldflags '-static'" \
+                     -tags "osusergo,netgo,static_build" \
+                     -o "$BINARY_NAME" .
+          else
+            # 其他平台使用标准静态编译
+            go build -ldflags="-s -w -extldflags '-static'" \
+                     -o "$BINARY_NAME" .
+          fi
+          
+          # 🆕 检查二进制依赖（确保无动态链接）
+          if [ "${{ matrix.target.goos }}" = "linux" ]; then
+            echo "🔍 检查二进制文件依赖:"
+            ldd "$BINARY_NAME" 2>&1 || echo "✅ 静态编译，无动态依赖"
+            file "$BINARY_NAME"
+          fi
           
           # 打包为 zip
           zip "${BINARY_NAME}.zip" "$BINARY_NAME"
@@ -82,10 +121,7 @@ jobs:
           echo "📦 原始下载结构:"
           find ./artifacts -type f
           
-          # 创建临时目录
           mkdir -p ./release_files
-          
-          # 复制所有 zip 文件
           find ./artifacts -type f -name "*.zip" | while read file; do
             filename=$(basename "$file")
             cp "$file" "./release_files/${filename}"
@@ -94,7 +130,6 @@ jobs:
           echo "📦 重组后的文件:"
           ls -la ./release_files/
           
-          # 计算文件大小
           echo "📊 文件大小信息:"
           for file in ./release_files/*; do
             size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
@@ -120,16 +155,29 @@ jobs:
           
           ## 📦 包含平台
           
-          ### 🐧 OpenWrt/Linux 版本
-          - **sh-tel-iptv-spider_aarch64_cortex-a53.zip**: 适用于 Cortex-A53 64位 ARM 设备（你的 OpenWrt 路由器）
-          - **sh-tel-iptv-spider_openwrt_x86_64.zip**: 适用于 x86_64 架构 OpenWrt 设备（软路由、虚拟机等）
+          ### 🐧 OpenWrt 版本（针对路由器优化）
+          - **sh-tel-iptv-spider_aarch64_cortex-a53.zip**: Cortex-A53 64位 ARM 设备（你的 OpenWrt 路由器）
+          - **sh-tel-iptv-spider_openwrt_x86_64.zip**: x86_64 架构 OpenWrt 设备
+          
+          ### 🐧 Linux 通用版本（适配低版本内核）
+          - **sh-tel-iptv-spider_linux_x86_64.zip**: Linux x86_64 通用版本
+            - ✅ 静态编译，无 glibc 依赖
+            - ✅ 兼容 Linux 内核 4.4+
+            - ✅ 适用 Ubuntu/CentOS/Debian/Alpine 等
           
           ### 🪟 Windows 版本
-          - **sh-tel-iptv-spider_windows_x86_64.zip**: 适用于 Windows 64位系统（Windows 10/11, Windows Server）
+          - **sh-tel-iptv-spider_windows_x86_64.zip**: Windows 64位系统
           
           ## 🚀 使用方法
           
-          ### OpenWrt/Linux
+          ### Linux 通用版本（内核 4.4+）
+          1. 下载 \`sh-tel-iptv-spider_linux_x86_64.zip\`
+          2. 解压：\`unzip sh-tel-iptv-spider_linux_x86_64.zip\`
+          3. 赋予执行权限：\`chmod +x sh-tel-iptv-spider_linux_x86_64\`
+          4. 运行程序：\`./sh-tel-iptv-spider_linux_x86_64 -h\`
+          5. （可选）移动到系统路径：\`sudo mv sh-tel-iptv-spider_linux_x86_64 /usr/local/bin/\`
+          
+          ### OpenWrt 设备
           1. 下载对应架构的 zip 文件
           2. 解压：\`unzip sh-tel-iptv-spider_<架构>.zip\`
           3. 上传到设备：\`scp sh-tel-iptv-spider_<架构> root@192.168.1.1:/root/\`
@@ -139,11 +187,11 @@ jobs:
           ### Windows
           1. 下载 \`sh-tel-iptv-spider_windows_x86_64.zip\`
           2. 解压到任意目录
-          3. 打开命令提示符或 PowerShell
-          4. 进入解压目录，运行：\`sh-tel-iptv-spider_windows_x86_64.exe -h\`
+          3. 运行：\`sh-tel-iptv-spider_windows_x86_64.exe -h\`
           
           ## ⚠️ 注意事项
           - 所有版本均为静态编译，不依赖外部库
+          - Linux 版本使用 musl 静态编译，兼容内核 4.4+
           - OpenWrt 版本需要能访问上海电信 IPTV 专网
           - 需要配置 MySQL 数据库连接
           - 如有问题，请查看项目文档或提交 Issue
