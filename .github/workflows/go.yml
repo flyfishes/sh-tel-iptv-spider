@@ -88,12 +88,79 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
+      # 🆕 需要读取权限来获取 tags
+      pull-requests: read
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # 🆕 获取所有 tags
+          fetch-tags: true
+
+      - name: 🆕 获取所有现有 tags
+        id: get_tags
+        run: |
+          echo "📋 获取所有现有 tags:"
+          git tag -l "v*" | sort -V
+          
+          # 获取最新版本号
+          LATEST_TAG=$(git tag -l "v*" | sort -V | tail -n 1)
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "latest_version=0" >> $GITHUB_OUTPUT
+            echo "📌 没有找到现有版本，将从 v1.0.0 开始"
+          else
+            # 提取版本号数字部分（去掉 v 前缀）
+            VERSION_NUM=$(echo "$LATEST_TAG" | sed 's/^v//' | sed 's/-.*//')
+            echo "latest_version=${VERSION_NUM}" >> $GITHUB_OUTPUT
+            echo "📌 最新版本: ${LATEST_TAG} (版本号: ${VERSION_NUM})"
+          fi
+
+      - name: 🆕 计算下一个版本号（语义化版本 vX.Y.Z）
+        id: version
+        run: |
+          LATEST_VERSION="${{ steps.get_tags.outputs.latest_version }}"
+          
+          if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "0" ]; then
+            # 如果没有版本，从 v1.0.0 开始
+            MAJOR=1
+            MINOR=0
+            PATCH=0
+          else
+            # 解析语义化版本号 vX.Y.Z
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
+            
+            # 🆕 每次构建增加补丁版本号（Z）
+            PATCH=$((PATCH + 1))
+            
+            # 如果补丁版本号达到 100，则进位
+            if [ $PATCH -ge 100 ]; then
+              PATCH=0
+              MINOR=$((MINOR + 1))
+            fi
+            
+            # 如果次版本号达到 100，则进位
+            if [ $MINOR -ge 100 ]; then
+              MINOR=0
+              MAJOR=$((MAJOR + 1))
+            fi
+          fi
+          
+          # 生成新版本号
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          TAG="v${NEW_VERSION}"
+          
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "name=Release ${TAG}" >> $GITHUB_OUTPUT
+          echo "📌 新版本: ${TAG}"
+          
+          # 获取短 commit hash 用于 Release 说明
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -121,19 +188,11 @@ jobs:
             echo "$(basename $file): ${size_mb} MB"
           done
 
-      - name: Generate release tag and name
-        id: version
+      - name: Generate release notes
         run: |
-          # 🆕 生成简洁版本号：日期 + 两位数序号（00-99）
-          DATE=$(date +'%Y%m%d')
-          RUN_NUM=$(( ${{ github.run_id }} % 100 ))
-          RUN_NUM=$(printf "%02d" $RUN_NUM)
-          TAG="v${DATE}-${RUN_NUM}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "name=Release ${TAG}" >> $GITHUB_OUTPUT
-          
-          # 获取短 commit hash 用于 Release 说明
-          SHORT_SHA=$(git rev-parse --short HEAD)
+          TAG="${{ steps.version.outputs.tag }}"
+          SHORT_SHA="${{ steps.version.outputs.sha }}"
+          VERSION="${{ steps.version.outputs.version }}"
           
           cat > release_notes.md << EOF
           ## 📋 版本信息
