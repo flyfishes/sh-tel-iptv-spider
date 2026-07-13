@@ -238,7 +238,7 @@ jobs:
           ## 📦 包含平台
           
           ### 🐧 OpenWrt 版本（针对路由器优化）
-          - **sh-tel-iptv-spider_aarch64_cortex-a53.zip**: Cortex-A53 64位 ARM 设备（你的 OpenWrt 路由器）
+          - **sh-tel-iptv-spider_aarch64_cortex-a53.zip**: Cortex-A53 64位 ARM 设备（OpenWrt）
           - **sh-tel-iptv-spider_openwrt_x86_64.zip**: x86_64 架构 OpenWrt 设备
           
           ### 🐧 Linux 通用版本（适配低版本内核）
@@ -256,19 +256,22 @@ jobs:
           1. 下载 \`sh-tel-iptv-spider_linux_x86_64.zip\`
           2. 解压：\`unzip sh-tel-iptv-spider_linux_x86_64.zip\`
           3. 赋予执行权限：\`chmod +x sh-tel-iptv-spider_linux_x86_64\`
-          4. 运行程序：\`./sh-tel-iptv-spider_linux_x86_64 -h\`
+          4. 修改config.yaml配置
+          5. 运行程序：\`./sh-tel-iptv-spider_linux_x86_64 -h\`
           
           ### OpenWrt 设备
           1. 下载对应架构的 zip 文件
           2. 解压：\`unzip sh-tel-iptv-spider_<架构>.zip\`
           3. 上传到设备：\`scp sh-tel-iptv-spider_<架构> root@192.168.1.1:/root/\`
           4. 赋予执行权限：\`chmod +x /root/sh-tel-iptv-spider_<架构>\`
-          5. 运行程序：\`/root/sh-tel-iptv-spider_<架构> -h\`
+          5. 修改config.yaml配置
+          6. 运行程序：\`/root/sh-tel-iptv-spider_<架构> -h\`
           
           ### Windows
           1. 下载 \`sh-tel-iptv-spider_windows_x86_64.zip\`
           2. 解压到任意目录
-          3. 运行：\`sh-tel-iptv-spider_windows_x86_64.exe -h\`
+          3. 修改config.yaml配置
+          4. 运行：\`sh-tel-iptv-spider_windows_x86_64.exe -h\`
           
           ## ⚠️ 注意事项
           - 所有版本均为静态编译，不依赖外部库
