@@ -16,10 +16,8 @@ jobs:
           - { goos: linux, goarch: arm64, name: aarch64_cortex-a53, ext: "", platform: "OpenWrt" }
           # OpenWrt 设备 - x86_64
           - { goos: linux, goarch: amd64, name: openwrt_x86_64, ext: "", platform: "OpenWrt" }
-          
-          # 🆕 Linux x86_64 通用版本（适配低版本内核 4.4）
+          # Linux x86_64 通用版本（适配低版本内核 4.4）
           - { goos: linux, goarch: amd64, name: linux_x86_64, ext: "", platform: "Linux" }
-          
           # Windows - x86_64
           - { goos: windows, goarch: amd64, name: windows_x86_64, ext: ".exe", platform: "Windows" }
       fail-fast: false
@@ -35,24 +33,18 @@ jobs:
         with:
           go-version: '1.21'
 
-      - name: 🆕 设置低版本兼容编译环境（Linux 专用）
+      - name: 设置低版本兼容编译环境（Linux 专用）
         if: matrix.target.platform == 'Linux' && matrix.target.goos == 'linux'
         run: |
           echo "🔧 配置低版本内核兼容编译参数"
-          # 安装 musl 工具链（静态编译，避免 glibc 版本问题）
           sudo apt-get update
           sudo apt-get install -y musl-tools
-          
-          # 检查安装
-          musl-gcc --version || echo "musl-gcc installed"
 
       - name: Build for target
         env:
           GOOS: ${{ matrix.target.goos }}
           GOARCH: ${{ matrix.target.goarch }}
           CGO_ENABLED: 0
-          # 🆕 低版本内核兼容参数
-          GOFLAGS: "-buildmode=pie"
         run: |
           echo "🔨 Building for ${{ matrix.target.platform }} - ${{ matrix.target.name }}"
           echo "   GOOS=$GOOS, GOARCH=$GOARCH"
@@ -60,34 +52,26 @@ jobs:
           
           go mod download
           
-          # 构建二进制文件
           BINARY_NAME="sh-tel-iptv-spider_${{ matrix.target.name }}${{ matrix.target.ext }}"
           
-          # 🆕 Linux 版本使用 musl 静态编译（兼容低版本 glibc）
           if [ "${{ matrix.target.platform }}" = "Linux" ] && [ "${{ matrix.target.goos }}" = "linux" ]; then
             echo "🐧 使用 musl 进行静态编译，兼容 Linux 内核 4.4+"
-            # 使用 musl-gcc 编译，确保不依赖 glibc
             CC=musl-gcc CGO_ENABLED=1 \
             go build -ldflags="-s -w -extldflags '-static'" \
                      -tags "osusergo,netgo,static_build" \
                      -o "$BINARY_NAME" .
           else
-            # 其他平台使用标准静态编译
             go build -ldflags="-s -w -extldflags '-static'" \
                      -o "$BINARY_NAME" .
           fi
           
-          # 🆕 检查二进制依赖（确保无动态链接）
           if [ "${{ matrix.target.goos }}" = "linux" ]; then
             echo "🔍 检查二进制文件依赖:"
             ldd "$BINARY_NAME" 2>&1 || echo "✅ 静态编译，无动态依赖"
             file "$BINARY_NAME"
           fi
           
-          # 打包为 zip
           zip "${BINARY_NAME}.zip" "$BINARY_NAME"
-          
-          # 显示文件信息
           ls -lh *.zip
 
       - name: Upload artifacts (临时存储)
@@ -140,15 +124,20 @@ jobs:
       - name: Generate release tag and name
         id: version
         run: |
+          # 🆕 生成简洁版本号：日期 + 两位数序号（00-99）
           DATE=$(date +'%Y%m%d')
-          TIME=$(date +'%H%M%S')
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          TAG="v${DATE}-${TIME}-${SHORT_SHA}"
+          RUN_NUM=$(( ${{ github.run_id }} % 100 ))
+          RUN_NUM=$(printf "%02d" $RUN_NUM)
+          TAG="v${DATE}-${RUN_NUM}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "name=Release ${TAG}" >> $GITHUB_OUTPUT
           
+          # 获取短 commit hash 用于 Release 说明
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
           cat > release_notes.md << EOF
           ## 📋 版本信息
+          - **版本**: ${TAG}
           - **Commit**: ${SHORT_SHA}
           - **构建时间**: $(date +'%Y-%m-%d %H:%M:%S')
           - **构建分支**: ${GITHUB_REF_NAME}
@@ -175,7 +164,6 @@ jobs:
           2. 解压：\`unzip sh-tel-iptv-spider_linux_x86_64.zip\`
           3. 赋予执行权限：\`chmod +x sh-tel-iptv-spider_linux_x86_64\`
           4. 运行程序：\`./sh-tel-iptv-spider_linux_x86_64 -h\`
-          5. （可选）移动到系统路径：\`sudo mv sh-tel-iptv-spider_linux_x86_64 /usr/local/bin/\`
           
           ### OpenWrt 设备
           1. 下载对应架构的 zip 文件
@@ -194,7 +182,6 @@ jobs:
           - Linux 版本使用 musl 静态编译，兼容内核 4.4+
           - OpenWrt 版本需要能访问上海电信 IPTV 专网
           - 需要配置 MySQL 数据库连接
-          - 如有问题，请查看项目文档或提交 Issue
           EOF
 
       - name: Create GitHub Release
