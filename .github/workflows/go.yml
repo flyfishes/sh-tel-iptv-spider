@@ -108,33 +108,35 @@ jobs:
           
           # 🆕 查找符合规范的 tags (vX.Y.Z-YYYYMMDD)
           echo "🔍 查找符合规范的 tags (vX.Y.Z-YYYYMMDD):"
-          VALID_TAGS=$(git tag -l "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-[0-9]{8}$' | sort -V)
+          # 使用 || true 避免 grep 无匹配时返回错误
+          VALID_TAGS=$(git tag -l "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-[0-9]{8}$' || true)
           echo "$VALID_TAGS"
           
-          # 🆕 获取当天最新的 tag（只查当天的）
-          TODAY_TAGS=$(echo "$VALID_TAGS" | grep "${CURRENT_DATE}$")
-          LATEST_TAG=$(echo "$TODAY_TAGS" | tail -n 1)
-          
-          # 如果没有当天的 tag，查找所有历史 tag 获取基础版本号
-          if [ -z "$LATEST_TAG" ]; then
-            echo "📌 当天没有找到版本，查找历史最新版本..."
-            LATEST_HISTORIC_TAG=$(echo "$VALID_TAGS" | tail -n 1)
+          # 🆕 如果没有找到任何符合规范的 tag，从 v1.0.0-当前日期 开始
+          if [ -z "$VALID_TAGS" ]; then
+            echo "📌 没有找到任何符合规范的版本，将从 v1.0.0-${CURRENT_DATE} 开始"
+            MAJOR=1
+            MINOR=0
+            PATCH=0
+          else
+            # 🆕 获取当天最新的 tag
+            TODAY_TAGS=$(echo "$VALID_TAGS" | grep "${CURRENT_DATE}$" || true)
+            LATEST_TAG=$(echo "$TODAY_TAGS" | tail -n 1)
             
-            if [ -z "$LATEST_HISTORIC_TAG" ]; then
-              # 🆕 完全没有历史版本，从 v1.0.0-YYYYMMDD 开始
-              MAJOR=1
-              MINOR=0
-              PATCH=0
-              echo "📌 没有找到任何历史版本，将从 v1.0.0-${CURRENT_DATE} 开始"
-            else
+            if [ -z "$LATEST_TAG" ]; then
+              # 当天没有版本，取历史最新版本
+              echo "📌 当天没有找到版本，查找历史最新版本..."
+              LATEST_HISTORIC_TAG=$(echo "$VALID_TAGS" | tail -n 1)
+              echo "📌 历史最新版本: ${LATEST_HISTORIC_TAG}"
+              
               # 提取历史最新版本号（去掉日期后缀）
               BASE_VERSION=$(echo "$LATEST_HISTORIC_TAG" | sed 's/-[0-9]\{8\}$//' | sed 's/^v//')
-              echo "📌 历史最新版本: ${LATEST_HISTORIC_TAG} (基础版本: ${BASE_VERSION})"
+              echo "📌 基础版本: ${BASE_VERSION}"
               
               # 解析基础版本号 X.Y.Z
               IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
               
-              # 🆕 当天第一次构建，补丁版本 +1
+              # 当天第一次构建，补丁版本 +1
               PATCH=$((PATCH + 1))
               
               # 如果补丁版本号达到 100，则进位到次版本
@@ -148,31 +150,31 @@ jobs:
                 MINOR=0
                 MAJOR=$((MAJOR + 1))
               fi
-            fi
-          else
-            # 🆕 当天已有版本，只增加补丁号，日期不变
-            echo "📌 当天最新版本: ${LATEST_TAG}"
-            
-            # 提取版本号部分（去掉日期后缀）
-            BASE_VERSION=$(echo "$LATEST_TAG" | sed 's/-[0-9]\{8\}$//' | sed 's/^v//')
-            echo "📌 基础版本: ${BASE_VERSION}"
-            
-            # 解析基础版本号 X.Y.Z
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
-            
-            # 🆕 当天已有版本，补丁版本 +1（日期不变）
-            PATCH=$((PATCH + 1))
-            
-            # 如果补丁版本号达到 100，则进位到次版本
-            if [ $PATCH -ge 100 ]; then
-              PATCH=0
-              MINOR=$((MINOR + 1))
-            fi
-            
-            # 如果次版本号达到 100，则进位到主版本
-            if [ $MINOR -ge 100 ]; then
-              MINOR=0
-              MAJOR=$((MAJOR + 1))
+            else
+              # 当天已有版本，只增加补丁号，日期不变
+              echo "📌 当天最新版本: ${LATEST_TAG}"
+              
+              # 提取版本号部分（去掉日期后缀）
+              BASE_VERSION=$(echo "$LATEST_TAG" | sed 's/-[0-9]\{8\}$//' | sed 's/^v//')
+              echo "📌 基础版本: ${BASE_VERSION}"
+              
+              # 解析基础版本号 X.Y.Z
+              IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+              
+              # 当天已有版本，补丁版本 +1（日期不变）
+              PATCH=$((PATCH + 1))
+              
+              # 如果补丁版本号达到 100，则进位到次版本
+              if [ $PATCH -ge 100 ]; then
+                PATCH=0
+                MINOR=$((MINOR + 1))
+              fi
+              
+              # 如果次版本号达到 100，则进位到主版本
+              if [ $MINOR -ge 100 ]; then
+                MINOR=0
+                MAJOR=$((MAJOR + 1))
+              fi
             fi
           fi
           
