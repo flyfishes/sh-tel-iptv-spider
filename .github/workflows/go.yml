@@ -277,7 +277,7 @@ jobs:
           - 所有版本均为静态编译，不依赖外部库
           - Linux 版本使用 musl 静态编译，兼容内核 4.4+
           - OpenWrt 版本需要能访问上海电信 IPTV 专网
-          - 需要配置 MySQL 数据库连接
+          - 需要配置 MySQL/Sqlite(默认) 数据库连接
           EOF
 
       - name: Create GitHub Release
