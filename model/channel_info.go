@@ -28,7 +28,7 @@ type ChannelInfo struct {
 	IsPullEPG     bool           `gorm:"default:true;comment:是否拉取节目单" json:"-"`
 	IsShow        bool           `gorm:"default:true;comment:是否展示该节目" json:"-"`
 	CommName      string         `gorm:"comment:通用标题" json:"-"`
-	LastFetchTime time.Time      `gorm:"comment:节目单最后更新时间" json:"-"`
+	LastFetchTime FlexTime       `gorm:"comment:节目单最后更新时间" json:"-"`
 }
 
 func (h *ChannelInfo) processData() {
@@ -119,7 +119,7 @@ func RemoveDuplicateChannelInfo(in []ChannelInfo) []ChannelInfo {
 		if errI == nil && errJ == nil {
 			return numi < numj
 		}
-		
+
 		// 使用字符串比较
 		// 使用 strings.Compare 进行更准确的字符串比较
 		return strings.Compare(newArr[i].MixNo, newArr[j].MixNo) < 0

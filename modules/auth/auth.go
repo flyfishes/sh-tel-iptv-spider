@@ -70,7 +70,9 @@ func (c *Client) authSetupOne() (*goquery.Document, error) {
 func (c *Client) authSetupTwo() (*goquery.Document, error) {
 	global.LOG.Info("认证流程二")
 	doc := c.epgIndex(c.htmlDocTemp)
+	global.LOG.Info(">>认证流程二, EPG epgLoadBalance: ")
 	doc = c.epgLoadBalance(doc)
+	global.LOG.Info(">>认证流程二, EPG epgPortalAuth: ")
 	doc, err := c.epgPortalAuth(doc)
 	if err != nil {
 		global.LOG.Info("认证流程结束, 出现错误")

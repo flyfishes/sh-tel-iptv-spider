@@ -2,7 +2,7 @@
 system:
   env: 'public'
   addr: '0.0.0.0:8888' # 监听地址
-  db-type: 'mysql'
+  db-type: 'mysql' # 可选值：mysql、sqlite
   oss-type: 'minio' # 可选值：minio、cos
 
 stb:
@@ -31,7 +31,17 @@ stb:
 #http://192.168.0.131:8888/api/m3u8
 #http://192.168.0.131:8888/api/epg
 #http://192.168.0.131:8888/api/schedule
-# EPG 配置已迁移至 Web 界面管理（/api/epg/config），首次启动时自动初始化默认值
+# EPG 配置
+epg:
+  generator: 'IPTV Spider'
+  source: 'sh-tel'
+  xml_url: ''
+  rtsp_url: 'http://192.168.1.131:3333/rtp/'
+  rtp_url: 'http://192.168.1.131:3333/rtsp/'
+  logo_url: ''
+  fetch_cron: '0 0 9,17,22 * * *' # EPG拉取定时任务
+  playseek: '&playseek={utc:YmdHMS}-{utcend:YmdHMS}'
+  
 
 oss:
   enable: true
@@ -66,6 +76,14 @@ mysql:
   log-mode: 'error'
   log-zap: false
 
+# sqlite connect configuration
+sqlite:
+  path: './data/iptv_spider.db' # 数据库文件路径，会自动创建
+  max-idle-conns: 10
+  max-open-conns: 100
+  log-mode: 'error'
+  log-zap: false
+
 zap:
   level: 'debug'
   format: 'console'
@@ -76,5 +94,13 @@ zap:
   encode-level: 'LowercaseColorLevelEncoder'
   stacktrace-key: 'stacktrace'
   log-in-console: false
+
+access-log:
+  enabled: true
+  director: 'log/access'
+  format: 'console'
+  log-in-console: false
+  max-age: 7
+  rotation-time: 24
 
 

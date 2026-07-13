@@ -1,28 +1,30 @@
 package initialize
 
 import (
-	"go.uber.org/zap"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/initialize/internal"
 	"iptv-spider-sh/model"
 	"os"
+
+	"github.com/glebarez/sqlite"
+	"go.uber.org/zap"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func Gorm() *gorm.DB {
 	switch global.CONFIG.System.DbType {
 	case "mysql":
 		return gormMysql()
+	case "sqlite":
+		return gormSqlite()
 	}
 	panic("数据库连接出错！")
 }
 
 func MysqlTables(db *gorm.DB) {
-	// 数据表初始化
 	err := db.AutoMigrate(
-		// 数据库模型
 		model.Channel{},
 		model.ChannelInfo{},
 		model.AuthInfo{},
@@ -50,7 +52,7 @@ func gormMysql() *gorm.DB {
 		DontSupportRenameColumn:   true,    // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
 		SkipInitializeWithVersion: false,   // 根据版本自动配置
 	}
-	if db, err := gorm.Open(mysql.New(mysqlConfig), gormConfig()); err != nil {
+	if db, err := gorm.Open(mysql.New(mysqlConfig), gormConfig("mysql")); err != nil {
 		return nil
 	} else {
 		sqlDB, _ := db.DB()
@@ -60,9 +62,34 @@ func gormMysql() *gorm.DB {
 	}
 }
 
-func gormConfig() *gorm.Config {
+func gormSqlite() *gorm.DB {
+	s := global.CONFIG.Sqlite
+	if s.Path == "" {
+		return nil
+	}
+	if db, err := gorm.Open(sqlite.Open(s.Path), gormConfig("sqlite")); err != nil {
+		return nil
+	} else {
+		sqlDB, _ := db.DB()
+		sqlDB.SetMaxIdleConns(s.MaxIdleConns)
+		sqlDB.SetMaxOpenConns(s.MaxOpenConns)
+		return db
+	}
+}
+
+func gormConfig(dbType string) *gorm.Config {
 	config := &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true}
-	switch global.CONFIG.Mysql.LogMode {
+	var logMode string
+	switch dbType {
+	case "mysql":
+		logMode = global.CONFIG.Mysql.LogMode
+	case "sqlite":
+		logMode = global.CONFIG.Sqlite.LogMode
+	default:
+		logMode = "info"
+	}
+
+	switch logMode {
 	case "silent", "Silent":
 		config.Logger = internal.Default.LogMode(logger.Silent)
 	case "error", "Error":

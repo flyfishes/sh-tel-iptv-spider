@@ -1,19 +1,21 @@
 package main
 
 import (
-	"github.com/golang-module/carbon"
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/middleware/recover"
-	"github.com/robfig/cron/v3"
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/initialize"
 	"iptv-spider-sh/modules/auth"
 	"iptv-spider-sh/router"
+
+	"github.com/golang-module/carbon"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/robfig/cron/v3"
 )
 
 func main() {
 	initialize.Viper()
 	global.LOG = initialize.Zap()
+	global.ACCESS_LOG = initialize.AccessLog()
 	global.CACHE = initialize.Cache()
 	global.DB = initialize.Gorm()
 	ossType := global.CONFIG.System.OSSType
@@ -58,7 +60,6 @@ func main() {
 
 	app.ConfigureHost(configHost)
 	_ = app.Run(iris.Addr(global.CONFIG.System.Addr), iris.WithoutServerError(iris.ErrServerClosed))
-
 }
 
 // 爬虫定时器

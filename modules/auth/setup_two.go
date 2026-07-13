@@ -40,6 +40,7 @@ func (c *Client) epgLoadBalance(doc *goquery.Document) *goquery.Document {
 				return nil
 			}
 			uri = s[index+1 : last]
+			break
 		}
 	}
 	u, err := url.Parse(uri)

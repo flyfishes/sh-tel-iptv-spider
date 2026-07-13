@@ -20,6 +20,7 @@ var (
 	VIPER              *viper.Viper
 	CONFIG             *config.Server
 	LOG                *zap.Logger
+	ACCESS_LOG         *zap.Logger
 	CRON               *cron.Cron
 	ConcurrencyControl = &singleflight.Group{}
 )
