@@ -72,7 +72,7 @@ func (c *Client) FetchChannelList() {
 			respJson.Data[i].LastFetchTime = model.FlexTime{Time: carbon.Now().SubHours(5).ToStdTime()}
 		}
 
-		global.LOG.Info("FetchChannelList Data:",
+		global.LOG.Debug("FetchChannelList Data:",
 			zap.Any("Channel Info", respJson.Data[i]))
 	}
 	/*
@@ -140,6 +140,7 @@ func (c *Client) FetchChannelProg() {
 		// 4 个小时之内更新过，跳过此次更新
 		lft := carbon.FromStdTime(ch.LastFetchTime.Time)
 		if lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow {
+			global.LOG.Info("距离上次更新不足4小时，跳过。")
 			continue
 		}
 		endTime := now.AddDays(3).TimestampMilli()
@@ -195,5 +196,5 @@ func (c *Client) FetchChannelProg() {
 			Updates(model.ChannelInfo{LastFetchTime: model.FlexTime{Time: time.Now()}})
 		time.Sleep(time.Millisecond * 500)
 	}
-	global.LOG.Info("更新节目信息列表完成")
+	global.LOG.Info(fmt.Sprintf("更新节目信息列表完成, 抓取频道数：%d",len(channelInfoList)))	
 }
