@@ -4,6 +4,7 @@ import (
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/modules/auth"
 	"iptv-spider-sh/utils"
+	"strconv"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -30,13 +31,17 @@ func InitApiRouters(rg iris.Party) {
 				case "update-chi":
 					auth.GetGlobalClient().FetchChannelList()
 				case "update-epg":
-					auth.GetGlobalClient().FetchChannelProg()
+					auth.GetGlobalClient().FetchChannelProg(false)
 				case "upload-m3u":
 					auth.GenerateAndUploadM3u()
 				case "upload-xmltv":
 					auth.GenerateAndUploadXmlTv()
 				case "upload-xmltv7":
 					auth.GenerateAndUploadXmlTvDays7()
+				case "upload-epgjson":
+					auth.GenerateAndUploadEpgJson()
+				case "upload-epgjson7":
+					auth.GenerateAndUploadEpgJsonDays7()
 				}
 				return nil, nil
 			})
@@ -49,7 +54,45 @@ func InitApiRouters(rg iris.Party) {
 	rg.Get("/tsM3u8", generateTsM3u8)
 
 	rg.Get("/epg", generateXmlTv)
+	rg.Get("/epgjson", generateEpgJson)
 
+}
+
+func generateEpgJson(ctx iris.Context) {
+	days := ctx.FormValue("days")
+	daysAgo, err := strconv.Atoi(days)
+	if err != nil {
+		daysAgo = 1 // default to 1 day
+	}
+
+	ref := ctx.FormValue("ref")
+	reqMD5Key := utils.CalcMD5KeyForRequest("generateEpgJson", days)
+
+	// 缓存机制
+	if ref != "true" && global.CACHE.IsExist(reqMD5Key) {
+		ctx.ContentType("application/json")
+		ctx.Binary(global.CACHE.Get(reqMD5Key).([]byte))
+		return
+	}
+
+	// 并发时合并请求
+	resp, _, _ := global.ConcurrencyControl.Do(reqMD5Key, func() (interface{}, error) {
+		epgBytes, err := auth.GenerateEpgJson(daysAgo)
+		if err != nil {
+			global.LOG.Error("生成EPG JSON失败: " + err.Error())
+			return nil, err
+		}
+		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
+		global.CACHE.Put(reqMD5Key, epgBytes, time.Minute*timeOut)
+		return epgBytes, nil
+	})
+
+	if resp == nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		return
+	}
+	ctx.ContentType("application/json")
+	ctx.Binary(resp.([]byte))
 }
 
 func schedule(ctx iris.Context) {

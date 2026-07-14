@@ -19,44 +19,44 @@ const PrefixHeader = `<?xml version="1.0" encoding="UTF-8"?>`
 
 // XmlTV tv tag
 type XmlTV struct {
-	Generator string   `xml:"generator-info-name,attr"`
-	Source    string   `xml:"source-info-name,attr"`
-	XMLName   xml.Name `xml:"tv"`
+	Generator string   `xml:"generator-info-name,attr" json:"generatorInfoName"`
+	Source    string   `xml:"source-info-name,attr" json:"sourceInfoName"`
+	XMLName   xml.Name `xml:"tv" json:"-"`
 
-	Channel []*XmlTvChannel `xml:"channel"`
-	Program []*Program      `xml:"programme"`
+	Channel []*XmlTvChannel `xml:"channel" json:"channel"`
+	Program []*Program      `xml:"programme" json:"programme"`
 }
 
 // XmlTvChannel : channel info
 type XmlTvChannel struct {
-	ID          string        `xml:"id,attr"`
-	DisplayName []DisplayName `xml:"display-name"`
+	ID          string        `xml:"id,attr" json:"id"`
+	DisplayName []DisplayName `xml:"display-name" json:"displayName"`
 }
 
 // DisplayName 频道名
 type DisplayName struct {
-	Lang  string `xml:"lang,attr"`
-	Value string `xml:",chardata"`
+	Lang  string `xml:"lang,attr" json:"lang"`
+	Value string `xml:",chardata" json:"value"`
 }
 
 // Program 节目
 type Program struct {
-	Channel string `xml:"channel,attr"`
-	Start   string `xml:"start,attr"`
-	Stop    string `xml:"stop,attr"`
+	Channel string `xml:"channel,attr" json:"channel"`
+	Start   string `xml:"start,attr" json:"start"`
+	Stop    string `xml:"stop,attr" json:"stop"`
 
-	Title []*Title `xml:"title"`
-	Desc  []*Desc  `xml:"desc"`
+	Title []*Title `xml:"title" json:"title"`
+	Desc  []*Desc  `xml:"desc" json:"desc"`
 }
 
 // Title 节目标题
 type Title struct {
-	Lang  string `xml:"lang,attr"`
-	Value string `xml:",chardata"`
+	Lang  string `xml:"lang,attr" json:"lang"`
+	Value string `xml:",chardata" json:"value"`
 }
 
 // Desc : 节目描述
 type Desc struct {
-	Lang  string `xml:"lang,attr"`
-	Value string `xml:",chardata"`
+	Lang  string `xml:"lang,attr" json:"lang"`
+	Value string `xml:",chardata" json:"value"`
 }

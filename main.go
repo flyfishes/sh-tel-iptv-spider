@@ -55,7 +55,7 @@ func main() {
 		// 启动时获取频道列表
 		client.FetchChannelList()
 		// 拉取一次节目单，如果近期更新过，则不会实际运行
-		client.FetchChannelProg()
+		client.FetchChannelProg(true)
 	}()
 
 	app.ConfigureHost(configHost)
@@ -73,7 +73,7 @@ func addSpiderCron(c *auth.Client) {
 	logNexTime("Add Task: 获取频道信息列表;\t\tNextTime: ", listID)
 
 	progID, _ = global.CRON.AddFunc(epgConfig.FetchCron, func() {
-		c.FetchChannelProg()
+		c.FetchChannelProg(false)
 		logNexTime("Task: 获取频道节目单列表;\t\tNextTime: ", progID)
 	})
 	logNexTime("Add Task: 获取频道节目单列表;\t\tNextTime: ", progID)

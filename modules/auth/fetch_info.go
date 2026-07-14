@@ -117,7 +117,7 @@ func (c *Client) FetchChannelList() {
 
 }
 
-func (c *Client) FetchChannelProg() {
+func (c *Client) FetchChannelProg(forceUpdate bool) {
 	err := c.checkSessionState()
 	if err != nil {
 		global.LOG.Error("FetchChannelProg checkSessionState Err: " + err.Error())
@@ -139,8 +139,8 @@ func (c *Client) FetchChannelProg() {
 	for _, ch := range channelInfoList {
 		// 4 个小时之内更新过，跳过此次更新
 		lft := carbon.FromStdTime(ch.LastFetchTime.Time)
-		if lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow {
-			global.LOG.Info("距离上次更新不足4小时，跳过。")
+		if !forceUpdate && (lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow) {
+			global.LOG.Info(fmt.Sprintf("距离上次更新不足4小时，跳过。%s", ch.CommName))
 			continue
 		}
 		endTime := now.AddDays(3).TimestampMilli()
@@ -196,5 +196,5 @@ func (c *Client) FetchChannelProg() {
 			Updates(model.ChannelInfo{LastFetchTime: model.FlexTime{Time: time.Now()}})
 		time.Sleep(time.Millisecond * 500)
 	}
-	global.LOG.Info(fmt.Sprintf("更新节目信息列表完成, 抓取频道数：%d",len(channelInfoList)))	
+	global.LOG.Info(fmt.Sprintf("更新节目信息列表完成, 抓取频道数：%d", len(channelInfoList)))
 }
