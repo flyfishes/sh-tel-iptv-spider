@@ -131,15 +131,16 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 
 	var channelInfoList []model.ChannelInfo
 	// 解决
-	global.DB.
-		Select("MAX(code) as code, MAX(ch_id) as ch_id, comm_name, MAX(last_fetch_time) as last_fetch_time, MAX(is_pull_epg) as is_pull_epg, MAX(is_show) as is_show").
-		Group("comm_name").
+	global.DB.Table("channel_infos as a").
+		Select("MAX(a.code) as code, MAX(a.ch_id) as ch_id, a.comm_name, MAX(a.last_fetch_time) as last_fetch_time, MAX(a.is_pull_epg) as is_pull_epg, MAX(a.is_show) as is_show, MAX(e.updated_at) as epg_updated_at").
+		Joins("LEFT JOIN epg_details as e ON a.comm_name = e.comm_name").
+		Group("a.comm_name").
 		Find(&channelInfoList)
 	now := carbon.Now()
 	for _, ch := range channelInfoList {
 		// 4 个小时之内更新过，跳过此次更新
 		lft := carbon.FromStdTime(ch.LastFetchTime.Time)
-		if !forceUpdate && (lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow) {
+		if !forceUpdate && (lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow || ch.EpgUpdatedAt.IsZero()) {
 			global.LOG.Info(fmt.Sprintf("距离上次更新不足4小时，跳过。%s", ch.CommName))
 			continue
 		}
@@ -188,9 +189,7 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 			Columns:   []clause.Column{{Name: "id"}},
 			UpdateAll: true,
 		}).Create(&des)
-		global.LOG.Info("GetChannelProg: ",
-			zap.Any("CommName", ch.CommName),
-			zap.Any("Data Length", length))
+		global.LOG.Info("更新节目信息: " + ch.CommName)
 		global.DB.Model(&model.ChannelInfo{}).
 			Where("comm_name = ?", ch.CommName).
 			Updates(model.ChannelInfo{LastFetchTime: model.FlexTime{Time: time.Now()}})

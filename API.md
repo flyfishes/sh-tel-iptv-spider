@@ -10,19 +10,19 @@
 
 | # | 接口 | 说明 |
 |---|------|------|
-| 1 | `GET /api/health` | 健康检查 |
+| 1 | `GET /api/health` | 健康检查（待实现） |
 | 2 | `GET /api/schedule` | 定时任务调度 |
-| 3 | `GET /api/requests` | 最近请求记录 |
+| 3 | `GET /api/requests` | 最近请求记录（待实现） |
 | 4 | `GET /api/run` | 手动触发任务 |
-| 5 | `GET /api/network-check` | 网络连通性检查 |
-| 6 | `GET /api/version-check` | 版本更新检查 |
-| 7 | `GET /api/self-upgrade` | 远程一键升级 |
-| 8 | `GET /api/status.html` | 状态监控页面 |
+| 5 | `GET /api/network-check` | 网络连通性检查（待实现） |
+| 6 | `GET /api/version-check` | 版本更新检查（待实现） |
+| 7 | `GET /api/self-upgrade` | 远程一键升级（待实现） |
+| 8 | `GET /api/status.html` | 状态监控页面（待实现） |
 | 9 | `GET /api/m3u8` | M3U 播放列表 |
-| 10 | `GET /api/channel/m3u8` | 单频道 M3U8 |
+| 10 | `GET /api/channel/m3u8` | 单频道 M3U8（待实现） |
 | 11 | `GET /api/epg` | XMLTV 节目单 |
-| 12 | `GET /api/log/stream` | SSE 实时日志流 |
-
+| 12 | `GET /api/log/stream` | SSE 实时日志流（待实现） |
+| 13 | `GET /api/epgjson` | XMLTV 节目单 JSON 格式 |
 ---
 
 ## 1. 健康检查

@@ -31,7 +31,7 @@
 | 依赖 | 说明 |
 |------|------|
 | 上海电信 IPTV 机顶盒 | 已开通 IPTV 服务，获取机顶盒账号 |
-| MySQL 数据库 | 存储频道、EPG、认证信息 |
+| SQLite/MySQL 数据库 | 存储频道、EPG、认证信息 |
 | IPTV 专网访问 | 需解决路由，确保能访问专网 |
 
 > ⚠️ **重要**：程序必须在能访问 IPTV 专网的环境运行，公网无法抓取。回放地址与鉴权绑定，仅限本人使用。
@@ -44,12 +44,10 @@
 
 | 文件 | 平台 |
 |------|------|
-| `sh-tel-iptv-spider_linux_386` | Linux x86 32位 |
-| `sh-tel-iptv-spider_linux_amd64` | Linux x86 64位 |
-| `sh-tel-iptv-spider_linux_arm` | Linux ARM 32位 |
-| `sh-tel-iptv-spider_linux_arm64` | Linux ARM 64位 |
-| `sh-tel-iptv-spider_windows_386.exe` | Windows 32位 |
-| `sh-tel-iptv-spider_windows_amd64.exe` | Windows 64位 |
+| `sh-tel-iptv-spider_linux_x86_64.zip` | Linux x86 64位 |
+| `sh-tel-iptv-spider_aarch64_cortex-a53.zip` | openwrt 24.04 arm A8 64位 |
+| `sh-tel-iptv-spider_openwrt_x86_64.zip` | openwrt x86-64位 |
+| `sh-tel-iptv-spider_windows_x86_64.exe.zip` | Windows 64位 |
 
 ### OpenWrt 用户
 
@@ -105,7 +103,7 @@ logread | grep iptv-spider        # 查看日志
 
 ### 配置文件
 
-编辑 `config.yaml`，填入 MySQL 连接信息、IPTV 认证参数以及自定义频道映射，启动即可。
+编辑 `config.yaml`，填入 MySQL/SQLite 连接信息、IPTV 认证参数以及自定义频道映射，启动即可。
 
 ---
 
@@ -153,7 +151,7 @@ logread | grep iptv-spider        # 查看日志
 |------|--------|------|
 | `system.env` | `public` | 运行环境，`public` 表示生产模式 |
 | `system.addr` | `0.0.0.0:8888` | 监听地址 |
-| `system.db-type` | `mysql` | 数据库类型，目前仅支持 MySQL |
+| `system.db-type` | `sqlite` | 数据库类型，目前支持 SQLite(默认)/MySQL |
 
 #### 机顶盒认证 (`stb`)
 

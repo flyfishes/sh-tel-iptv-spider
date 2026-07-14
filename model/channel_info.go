@@ -29,6 +29,7 @@ type ChannelInfo struct {
 	IsShow        bool           `gorm:"default:true;comment:是否展示该节目" json:"-"`
 	CommName      string         `gorm:"comment:通用标题" json:"-"`
 	LastFetchTime FlexTime       `gorm:"comment:节目单最后更新时间" json:"-"`
+	EpgUpdatedAt  FlexTime       `gorm:"comment:epg节目单最后更新时间" json:"-"`
 }
 
 func (h *ChannelInfo) processData() {

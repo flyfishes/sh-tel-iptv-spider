@@ -55,7 +55,7 @@ func main() {
 		// 启动时获取频道列表
 		client.FetchChannelList()
 		// 拉取一次节目单，如果近期更新过，则不会实际运行
-		client.FetchChannelProg(true)
+		client.FetchChannelProg(false)
 	}()
 
 	app.ConfigureHost(configHost)
