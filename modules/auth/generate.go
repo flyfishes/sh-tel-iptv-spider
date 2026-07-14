@@ -61,6 +61,33 @@ func getChannelInfoList(orderBy string) ([]model.ChannelInfo, error) {
 	return channelInfoList, nil
 }
 
+// getChannelUrlsList 根据 comm_name 获取频道URL信息列表
+func getChannelUrlsList(commName string) ([]model.ChannelUrlInfo, error) {
+	var channelUrlsList []model.ChannelUrlInfo
+
+	query := global.DB.Table("channels as a").
+		Select("a.user_channel_id, a.channel_url, a.channel_sdp, a.time_shift_url, a.channel_fcc_port, a.channel_fcc_ip, f.comm_name, f.name, f.mix_no, f.is_show").
+		Joins("INNER JOIN channel_infos as f ON a.user_channel_id = f.mix_no").
+		Order("f.comm_name")
+
+	if commName != "" {
+		query = query.Where("f.comm_name = ?", commName)
+	}
+
+	err := query.Find(&channelUrlsList).Error
+	if err != nil {
+		global.LOG.Error("查询频道URL信息失败: " + err.Error())
+		return nil, err
+	}
+
+	// 填充分组信息
+	for i := range channelUrlsList {
+		channelUrlsList[i].Group = autoGroupByName(channelUrlsList[i].Name)
+	}
+
+	return channelUrlsList, nil
+}
+
 // getM3u8Mapping 获取频道映射信息，包含错误处理
 func getM3u8Mapping(commName string) (model.M3u8Mapping, error) {
 	var m3u8Mapping model.M3u8Mapping
@@ -294,6 +321,7 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 	}
 	// 去重
 	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList)
+
 	for _, info := range newChanInfo {
 		// 不展示
 		if !info.IsShow {
@@ -313,6 +341,56 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 
 		uri := assemblyUrl(udpxy, scheme, xteve, channel.TimeShiftURL, "", "") //修改加上fcc端口和用户
 		m3uWriter.Write(uri, info, m3u8Mapping)
+	}
+	return m3uWriter.Bytes()
+}
+
+func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
+	// 配置空值检查
+	if global.CONFIG == nil || global.CONFIG.Epg.XmlUrl == "" {
+		global.LOG.Error("配置文件未正确加载:Epg.XmlUrl")
+		return nil
+	}
+
+	m3uWriter := m3u.NewWriter()
+
+	// 查询数据库
+	channelUrlsList, err := getChannelUrlsList("")
+	if err != nil {
+		global.LOG.Error("查询Diyp频道信息失败: " + err.Error())
+		return nil
+	}
+	// 根据channelUrlsList.Group以节目分组进行排序, 相同分组内再以CommName排序
+	sort.SliceStable(channelUrlsList, func(i, j int) bool {
+		if channelUrlsList[i].Group != channelUrlsList[j].Group {
+			return channelUrlsList[i].Group < channelUrlsList[j].Group
+		}
+		return channelUrlsList[i].CommName < channelUrlsList[j].CommName
+	})
+
+	prev_groupName := ""
+	for _, info := range channelUrlsList {
+		// 不展示
+		if !info.IsShow {
+			continue
+		}
+		// 写入分组头
+		if info.Group != prev_groupName {
+			m3uWriter.WriteGroupHeader(info.Group)
+			prev_groupName = info.Group
+		}
+
+		m3u8Mapping, err := getM3u8Mapping(info.CommName)
+		if err != nil {
+			global.LOG.Error(fmt.Sprintf("查询时移频道映射失败 (CommName: %s): %s", info.CommName, err.Error()))
+			continue
+		}
+
+		uri := assemblyUrl(udpxy, scheme, xteve, info.ChannelURL, "", "") //修改加上fcc端口和用户
+		m3uWriter.WriteDiyp(uri, info, m3u8Mapping)
+		m3uWriter.WriteDiyp(info.ChannelSDP, info, m3u8Mapping)
+		m3uWriter.WriteDiyp(info.TimeShiftURL, info, m3u8Mapping)
+
 	}
 	return m3uWriter.Bytes()
 }

@@ -25,15 +25,31 @@ func (m *Writer) WriteHeader() {
 	m.buf.WriteString("#EXTM3U \n")
 }
 
+func (m *Writer) WriteGroupHeader(groupName string) {
+	m.buf.WriteString(fmt.Sprintf("%s,#genre#\n", groupName))
+}
+
 func (m *Writer) Write(uri string, info model.ChannelInfo, ext model.M3u8Mapping) {
 	var groups = ext.CustomGroups
 	if groups == "" {
 		groups = ext.AutoGroups
 	}
+
 	m.buf.WriteString("\n")
 	m.buf.WriteString(fmt.Sprintf(`#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-logo="%s"`, info.MixNo, info.CommName, ext.Logo))
 	m.buf.WriteString(fmt.Sprintf(` group-title="%s"`, groups))
 	m.buf.WriteString(fmt.Sprintf(",%s\n%s", info.Name, uri))
+
+}
+
+func (m *Writer) WriteDiyp(uri string, info model.ChannelUrlInfo, ext model.M3u8Mapping) {
+	var groups = ext.CustomGroups
+	if groups == "" {
+		groups = ext.AutoGroups
+	}
+
+	m.buf.WriteString(fmt.Sprintf("%s,%s\n", info.CommName, uri))
+
 }
 
 // 新增方法：带回看地址

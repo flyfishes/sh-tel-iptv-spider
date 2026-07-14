@@ -52,6 +52,7 @@ func InitApiRouters(rg iris.Party) {
 	rg.Get("/m3u8", generateM3u8)
 
 	rg.Get("/tsM3u8", generateTsM3u8)
+	rg.Get("/diyp", generateDiypTxt)
 
 	rg.Get("/epg", generateXmlTv)
 	rg.Get("/epgjson", generateEpgJson)
@@ -183,5 +184,41 @@ func generateTsM3u8(ctx iris.Context) {
 		return respBytes, nil
 	})
 	ctx.Header("Content-Disposition", "attachment; filename=iptv-ts.m3u")
+	ctx.Binary(resp.([]byte))
+}
+
+func generateDiypTxt(ctx iris.Context) {
+	ref := ctx.FormValue("ref")
+	udpxy := ctx.FormValue("udpxy")
+	scheme := ctx.FormValue("scheme")
+	xteve := ctx.FormValue("xteve")
+	all := ctx.FormValue("all")
+
+	var bufStr string
+	if xteve == "true" {
+		bufStr = "xteve"
+	} else if udpxy != "" {
+		bufStr = udpxy
+	} else if scheme != "" {
+		bufStr = scheme
+	}
+	if all == "true" {
+		bufStr += all
+	}
+	reqMD5Key := utils.CalcMD5KeyForRequest("generateTsM3u8", bufStr)
+	// 缓存机制
+	if ref != "true" && global.CACHE.IsExist(reqMD5Key) {
+		ctx.Header("Content-Disposition", "attachment; filename=iptv-diyp.txt")
+		ctx.Binary(global.CACHE.Get(reqMD5Key).([]byte))
+		return
+	}
+	// 并发时合并请求
+	resp, _, _ := global.ConcurrencyControl.Do(reqMD5Key, func() (interface{}, error) {
+		respBytes := auth.GenerateDiyp(udpxy, scheme, xteve, all)
+		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
+		global.CACHE.Put(reqMD5Key, respBytes, time.Minute*timeOut)
+		return respBytes, nil
+	})
+	ctx.Header("Content-Disposition", "attachment; filename=iptv-diyp.txt")
 	ctx.Binary(resp.([]byte))
 }

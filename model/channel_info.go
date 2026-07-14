@@ -32,6 +32,21 @@ type ChannelInfo struct {
 	EpgUpdatedAt  FlexTime       `gorm:"comment:epg节目单最后更新时间" json:"-"`
 }
 
+// ChannelUrlInfo 结合 channels 和 channel_infos 的查询结果
+type ChannelUrlInfo struct {
+	UserChannelID  string `gorm:"primarykey"`
+	ChannelURL     string
+	ChannelSDP     string
+	TimeShiftURL   string
+	ChannelFCCPort string
+	ChannelFCCIP   string
+	CommName       string
+	Name           string
+	MixNo          string
+	IsShow         bool
+	Group          string `gorm:"-"`
+}
+
 func (h *ChannelInfo) processData() {
 	name := strings.ToUpper(h.Name)
 	h.CommName = name

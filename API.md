@@ -290,6 +290,8 @@ GET /api/status.html
 
 ```
 GET /api/m3u8?<参数>
+GET /api/diyp?<参数>
+
 ```
 
 **参数：**
