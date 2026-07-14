@@ -80,7 +80,7 @@ func getM3u8Mapping(commName string) (model.M3u8Mapping, error) {
 func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
 	// 配置空值检查
 	if global.CONFIG == nil || global.CONFIG.Epg.XmlUrl == "" {
-		global.LOG.Error("配置文件未正确加载")
+		global.LOG.Error("配置文件未正确加载:Epg.XmlUrl")
 		return nil
 	}
 	
@@ -279,7 +279,7 @@ func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
 func GenerateTimeShiftM3u8() []byte {
 	// 配置空值检查
 	if global.CONFIG == nil || global.CONFIG.Epg.XmlUrl == "" {
-		global.LOG.Error("配置文件未正确加载")
+		global.LOG.Error("配置文件未正确加载:Epg.XmlUrl")
 		return nil
 	}
 	
@@ -320,7 +320,7 @@ func GenerateTimeShiftM3u8() []byte {
 func assemblyUrl(udpxy, scheme, xteve, uri, fccIp, fccPort string) string {
 	// 配置空值检查
 	if global.CONFIG == nil || global.CONFIG.Epg.RtpUrl == "" {
-		global.LOG.Error("配置文件未正确加载，无法生成URL")
+		global.LOG.Error("配置文件未正确加载:Epg.RtpUrl，无法生成URL")
 		return ""
 	}
 	
@@ -365,7 +365,7 @@ func assemblyUrl(udpxy, scheme, xteve, uri, fccIp, fccPort string) string {
 func GenerateXmlTv(daysAgo int) ([]byte, error) {
 	// 配置空值检查
 	if global.CONFIG == nil || global.CONFIG.Epg.Generator == "" {
-		global.LOG.Error("配置文件未正确加载")
+		global.LOG.Error("配置文件未正确加载:Epg.Generator")
 		return nil, errors.New("配置文件未正确加载")
 	}
 	
