@@ -25,13 +25,14 @@ func index(ctx iris.Context) {
 
 频道列表接口:
   GET /api/m3u8     - 生成M3U8频道列表文件
-    参数: udpxy, scheme, xteve, all, ref
+    参数: udpxy=url, scheme=(rtsp|rtp|igmp)://, xteve=false|true, all=true, ref=false|true
   GET /api/tsM3u8   - 生成时移M3U8文件
-    参数: ref
+    参数: ref=false|true
 
 节目单接口:
   GET /api/epg      - 生成XMLTV节目单
-    参数: daysAgo(默认1), ref
+  GET /api/epgjson  - 生成JSON格式节目单
+    参数: daysAgo(默认1), ref=false|true
 
 任务管理接口:
   GET /api/schedule - 获取定时任务调度列表

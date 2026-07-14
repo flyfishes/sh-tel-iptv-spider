@@ -152,7 +152,23 @@ func generateM3u8(ctx iris.Context) {
 
 func generateTsM3u8(ctx iris.Context) {
 	ref := ctx.FormValue("ref")
-	reqMD5Key := utils.CalcMD5KeyForRequest("generateTsM3u8")
+	udpxy := ctx.FormValue("udpxy")
+	scheme := ctx.FormValue("scheme")
+	xteve := ctx.FormValue("xteve")
+	all := ctx.FormValue("all")
+
+	var bufStr string
+	if xteve == "true" {
+		bufStr = "xteve"
+	} else if udpxy != "" {
+		bufStr = udpxy
+	} else if scheme != "" {
+		bufStr = scheme
+	}
+	if all == "true" {
+		bufStr += all
+	}
+	reqMD5Key := utils.CalcMD5KeyForRequest("generateTsM3u8", bufStr)
 	// 缓存机制
 	if ref != "true" && global.CACHE.IsExist(reqMD5Key) {
 		ctx.Header("Content-Disposition", "attachment; filename=iptv-ts.m3u")
@@ -161,7 +177,7 @@ func generateTsM3u8(ctx iris.Context) {
 	}
 	// 并发时合并请求
 	resp, _, _ := global.ConcurrencyControl.Do(reqMD5Key, func() (interface{}, error) {
-		respBytes := auth.GenerateTimeShiftM3u8()
+		respBytes := auth.GenerateTimeShiftM3u8(udpxy, scheme, xteve, all)
 		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
 		global.CACHE.Put(reqMD5Key, respBytes, time.Minute*timeOut)
 		return respBytes, nil

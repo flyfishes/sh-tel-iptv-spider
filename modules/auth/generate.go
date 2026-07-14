@@ -277,7 +277,7 @@ func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
 	return m3uWriter.Bytes()
 }
 
-func GenerateTimeShiftM3u8() []byte {
+func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 	// 配置空值检查
 	if global.CONFIG == nil || global.CONFIG.Epg.XmlUrl == "" {
 		global.LOG.Error("配置文件未正确加载:Epg.XmlUrl")
@@ -311,7 +311,7 @@ func GenerateTimeShiftM3u8() []byte {
 			continue
 		}
 
-		uri := assemblyUrl("", "", "", channel.TimeShiftURL, "", "") //修改加上fcc端口和用户
+		uri := assemblyUrl(udpxy, scheme, xteve, channel.TimeShiftURL, "", "") //修改加上fcc端口和用户
 		m3uWriter.Write(uri, info, m3u8Mapping)
 	}
 	return m3uWriter.Bytes()

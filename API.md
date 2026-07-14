@@ -19,6 +19,7 @@
 | 7 | `GET /api/self-upgrade` | 远程一键升级（待实现） |
 | 8 | `GET /api/status.html` | 状态监控页面（待实现） |
 | 9 | `GET /api/m3u8` | M3U 播放列表 |
+| 10 | `GET /api/tsM3u8` | M3U 播放列表 |
 | 10 | `GET /api/channel/m3u8` | 单频道 M3U8（待实现） |
 | 11 | `GET /api/epg` | XMLTV 节目单 |
 | 12 | `GET /api/log/stream` | SSE 实时日志流（待实现） |
