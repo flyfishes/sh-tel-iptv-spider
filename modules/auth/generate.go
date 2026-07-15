@@ -409,11 +409,19 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 			orderMap[n.Name] = i
 		}
 	}
+	for i, item := range channelUrlsList {
+		fmt.Printf("%d. Name: %s, CommName: %s, Group: %s\n",
+			i+1, item.Name, item.CommName, item.Group)
+	}
 	SortChannelsByFields(channelUrlsList, orderMap,
 		func(item model.ChannelUrlInfo) string { return item.Name },
 		func(item model.ChannelUrlInfo) string { return item.Group },
 		func(item model.ChannelUrlInfo) string { return item.CommName },
 	)
+	for i, item := range channelUrlsList {
+		fmt.Printf(">>%d. Name: %s, CommName: %s, Group: %s\n",
+			i+1, item.Name, item.CommName, item.Group)
+	}
 	/*
 		// 对根据channelUrlsList.Name 进行排序
 		sort.SliceStable(channelUrlsList, func(i, j int) bool {
