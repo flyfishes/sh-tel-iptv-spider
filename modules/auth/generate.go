@@ -408,6 +408,8 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 		for i, n := range global.CONFIG.Epg.NameSequence {
 			orderMap[n.Name] = i
 		}
+	} else {
+		global.LOG.Info("提示:节目排序配置name_sequence为空.")
 	}
 	for i, item := range channelUrlsList {
 		fmt.Printf("%d. Name: %s[%d], CommName: %s, Group: %s\n",
