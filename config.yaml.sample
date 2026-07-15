@@ -50,7 +50,7 @@ epg:
     - "东方购物-2"
     - "卡酷卡通"
 
-#排序表
+  #排序表
   name_sequence: 
     - name: "CCTV-5"
     - name: "CCTV-5+"
