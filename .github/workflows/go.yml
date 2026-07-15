@@ -100,7 +100,7 @@ jobs:
         id: version
         run: |
           echo "📋 当前所有 tags:"
-          git tag -l
+          git tag -l | sort -V
           
           # 1. 从项目根目录读取基础版本号
           VERSION_FILE="version.txt"
@@ -114,7 +114,6 @@ jobs:
           fi
           
           # 解析 version.txt 中的 MAJOR 和 MINOR 
-          # 比如 0.3.0 -> MAJOR=0, MINOR=3 (PATCH 强制从 0 开始自增，或作为初始值)
           IFS='.' read -r FILE_MAJOR FILE_MINOR FILE_PATCH <<< "$BASE_VERSION_RAW"
           
           # 如果解析失败，赋默认值
@@ -142,14 +141,14 @@ jobs:
             MINOR=$FILE_MINOR
             PATCH=0
           else
-            # 优先查找当天、且匹配前缀的 tags
-            TODAY_TAGS=$(echo "$VALID_TAGS" | grep "${CURRENT_DATE}$" || true)
+            # 优先查找当天、且匹配前缀的 tags (通过 sort -V 确保 1.0.10 排在 1.0.9 后面)
+            TODAY_TAGS=$(echo "$VALID_TAGS" | grep "${CURRENT_DATE}$" | sort -V || true)
             LATEST_TAG=$(echo "$TODAY_TAGS" | tail -n 1)
             
             if [ -z "$LATEST_TAG" ]; then
-              # 当天没有匹配前缀的版本，取历史最新匹配的前缀版本
+              # 当天没有匹配前缀的版本，取历史最新匹配的前缀版本 (通过 sort -V 确保全局正确排序)
               echo "📌 当天没有找到符合前缀的版本，查找历史最新匹配版本..."
-              LATEST_HISTORIC_TAG=$(echo "$VALID_TAGS" | tail -n 1)
+              LATEST_HISTORIC_TAG=$(echo "$VALID_TAGS" | sort -V | tail -n 1)
               echo "📌 历史最新匹配版本: ${LATEST_HISTORIC_TAG}"
               
               # 提取版本号部分（去掉日期后缀和开头的 v）
