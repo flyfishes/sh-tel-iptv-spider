@@ -20,7 +20,7 @@ type ChannelMapping struct {
 	Logo             string   `mapstructure:"logo" json:"logo" yaml:"logo"`
 	Group            string   `mapstructure:"group" json:"group" yaml:"group"`
 	Name_sequence    string   `mapstructure:"name_sequence" json:"name_sequence" yaml:"name_sequence"`
-	Exclude_channels []string `mapstructure:"exclude_channels" json:"exclude_channels" yaml:"exclude_channels"`
+	Exclude_channels []string `mapstructure:"exclude_channels" json:"exclude_channels" yaml:"exclude_channels"` //新增
 }
 
 type NameSequence struct {

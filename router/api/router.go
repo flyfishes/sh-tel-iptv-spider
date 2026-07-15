@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/modules/auth"
 	"iptv-spider-sh/utils"
@@ -239,7 +240,7 @@ func generateDiypTxt(ctx iris.Context) {
 }
 
 func SaveToLogDir(data []byte, filename string) {
-	logDir := global.CONFIG.Zap.Director
+	logDir := fmt.Sprintf("%s/tv", global.CONFIG.Zap.Director)
 	if ok, _ := utils.PathExists(logDir); !ok {
 		os.MkdirAll(logDir, os.ModePerm)
 	}

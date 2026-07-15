@@ -334,6 +334,23 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 	// 去重
 	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList)
 
+	// 构建 name_sequence 顺序表
+	orderMap := make(map[string]int)
+	if global.CONFIG.Epg.NameSequence != nil {
+		for i, n := range global.CONFIG.Epg.NameSequence {
+			orderMap[n.Name] = i
+		}
+	}
+	// 对根据channelUrlsList.Name 进行排序
+	sort.SliceStable(newChanInfo, func(i, j int) bool {
+		orderI, okI := orderMap[newChanInfo[i].Name]
+		orderJ, okJ := orderMap[newChanInfo[j].Name]
+		if okI != okJ {
+			return okI
+		}
+		return orderI < orderJ
+	})
+
 	// 构建Exclude_Channels 映射表
 	excludeMap := make(map[string]bool)
 	for _, m := range global.CONFIG.Epg.ChannelMappings {
@@ -384,6 +401,23 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 		global.LOG.Error("查询Diyp频道信息失败: " + err.Error())
 		return nil
 	}
+
+	// 构建 name_sequence 顺序表
+	orderMap := make(map[string]int)
+	if global.CONFIG.Epg.NameSequence != nil {
+		for i, n := range global.CONFIG.Epg.NameSequence {
+			orderMap[n.Name] = i
+		}
+	}
+	// 对根据channelUrlsList.Name 进行排序
+	sort.SliceStable(channelUrlsList, func(i, j int) bool {
+		orderI, okI := orderMap[channelUrlsList[i].Name]
+		orderJ, okJ := orderMap[channelUrlsList[j].Name]
+		if okI != okJ {
+			return okI
+		}
+		return orderI < orderJ
+	})
 	// 根据channelUrlsList.Group以节目分组进行排序, 相同分组内再以CommName排序
 	sort.SliceStable(channelUrlsList, func(i, j int) bool {
 		if channelUrlsList[i].Group != channelUrlsList[j].Group {
