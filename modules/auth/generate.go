@@ -129,7 +129,7 @@ func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
 
 	fmt.Println("查询到的频道数量:", len(channelInfoList))
 	// 去重
-	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList)
+	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList, false)
 	// 输出去重后的频道数量和信息
 	fmt.Println("去重后的频道数量:", len(newChanInfo))
 	//fmt.Println("去重后的频道信息:", newChanInfo)
@@ -336,7 +336,7 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 		return nil
 	}
 	// 去重
-	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList)
+	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList, false)
 
 	// 构建 name_sequence 顺序表
 	orderMap := make(map[string]int)
@@ -549,7 +549,7 @@ func GenerateXmlTv(daysAgo int) ([]byte, error) {
 		return nil, errors.New("查询频道信息失败")
 	}
 	// 去重
-	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList)
+	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList, true)
 
 	// 性能优化：批量查询EPG数据
 	// 1. 收集所有需要拉取EPG的频道名称
@@ -646,7 +646,7 @@ func GenerateEpgJson(daysAgo int) ([]byte, error) {
 		return nil, errors.New("查询频道信息失败")
 	}
 	// 去重
-	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList)
+	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList, false)
 
 	// 性能优化：批量查询EPG数据
 	// 1. 收集所有需要拉取EPG的频道名称

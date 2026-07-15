@@ -112,7 +112,7 @@ func (h *ChannelInfo) BeforeUpdate(tx *gorm.DB) (err error) {
 }
 
 // RemoveDuplicateChannelInfo  ChannelInfo 数组去重
-func RemoveDuplicateChannelInfo(in []ChannelInfo) []ChannelInfo {
+func RemoveDuplicateChannelInfo(in []ChannelInfo, sortby bool) []ChannelInfo {
 	newMap := make(map[string]ChannelInfo, len(in))
 	for _, child := range in {
 		if ch, ok := newMap[child.CommName]; ok {
@@ -128,19 +128,22 @@ func RemoveDuplicateChannelInfo(in []ChannelInfo) []ChannelInfo {
 	for _, v := range newMap {
 		newArr = append(newArr, v)
 	}
-	// sort by mix_no
-	sort.Slice(newArr, func(i, j int) bool {
-		// 尝试数字比较（如果都是数字）
-		numi, errI := strconv.Atoi(newArr[i].MixNo)
-		numj, errJ := strconv.Atoi(newArr[j].MixNo)
-		if errI == nil && errJ == nil {
-			return numi < numj
-		}
 
-		// 使用字符串比较
-		// 使用 strings.Compare 进行更准确的字符串比较
-		return strings.Compare(newArr[i].MixNo, newArr[j].MixNo) < 0
-	})
+	if sortby {
+		// sort by mix_no
+		sort.Slice(newArr, func(i, j int) bool {
+			// 尝试数字比较（如果都是数字）
+			numi, errI := strconv.Atoi(newArr[i].MixNo)
+			numj, errJ := strconv.Atoi(newArr[j].MixNo)
+			if errI == nil && errJ == nil {
+				return numi < numj
+			}
+
+			// 使用字符串比较
+			// 使用 strings.Compare 进行更准确的字符串比较
+			return strings.Compare(newArr[i].MixNo, newArr[j].MixNo) < 0
+		})
+	}
 	return newArr
 }
 
