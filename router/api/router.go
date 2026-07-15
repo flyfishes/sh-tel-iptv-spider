@@ -17,6 +17,7 @@ func InitApiRouters(rg iris.Party) {
 	rg.Get("/schedule", schedule)
 	rg.Get("/run", func(ctx iris.Context) {
 		taskName := ctx.FormValue("task")
+		ref := ctx.FormValue("ref") == "true"
 
 		go func() {
 			global.ConcurrencyControl.Do("", func() (interface{}, error) {
@@ -34,7 +35,7 @@ func InitApiRouters(rg iris.Party) {
 				case "update-chi":
 					auth.GetGlobalClient().FetchChannelList()
 				case "update-epg":
-					auth.GetGlobalClient().FetchChannelProg(false)
+					auth.GetGlobalClient().FetchChannelProg(ref)
 				case "upload-m3u":
 					auth.GenerateAndUploadM3u()
 				case "upload-xmltv":

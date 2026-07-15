@@ -39,5 +39,6 @@ func index(ctx iris.Context) {
   GET /api/schedule - 获取定时任务调度列表
   GET /api/run      - 手动触发任务执行
     参数: task(clean-ch/clean-chi/clean-epg/clean/update-chi/update-epg/upload-m3u/upload-xmltv/upload-xmltv7)
+	参数: ref(false|true)
 `)
 }
