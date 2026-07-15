@@ -140,7 +140,7 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 	for i, ch := range channelInfoList {
 		// 4 个小时之内更新过，跳过此次更新
 		lft := carbon.FromStdTime(ch.LastFetchTime.Time)
-		if !forceUpdate && (lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow || ch.EpgUpdatedAt.IsZero()) {
+		if !forceUpdate && (lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow) && !ch.EpgUpdatedAt.IsZero() {
 			global.LOG.Info(fmt.Sprintf("距离上次更新不足4小时，跳过。%s", ch.CommName))
 			continue
 		}
