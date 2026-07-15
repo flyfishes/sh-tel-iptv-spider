@@ -137,7 +137,7 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 		Group("a.comm_name").
 		Find(&channelInfoList)
 	now := carbon.Now()
-	for _, ch := range channelInfoList {
+	for i, ch := range channelInfoList {
 		// 4 个小时之内更新过，跳过此次更新
 		lft := carbon.FromStdTime(ch.LastFetchTime.Time)
 		if !forceUpdate && (lft.Gt(now.SubHours(4)) || !ch.IsPullEPG || !ch.IsShow || ch.EpgUpdatedAt.IsZero()) {
@@ -189,7 +189,7 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 			Columns:   []clause.Column{{Name: "id"}},
 			UpdateAll: true,
 		}).Create(&des)
-		global.LOG.Info("更新节目信息: " + ch.CommName)
+		global.LOG.Info(fmt.Sprintf("更新节目信息[%d]: %s", i+1, ch.CommName))
 		global.DB.Model(&model.ChannelInfo{}).
 			Where("comm_name = ?", ch.CommName).
 			Updates(model.ChannelInfo{LastFetchTime: model.FlexTime{Time: time.Now()}})

@@ -388,7 +388,6 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 
 		uri := assemblyUrl(udpxy, scheme, xteve, info.ChannelURL, "", "") //修改加上fcc端口和用户
 		m3uWriter.WriteDiyp(uri, info, m3u8Mapping)
-		m3uWriter.WriteDiyp(info.ChannelSDP, info, m3u8Mapping)
 		m3uWriter.WriteDiyp(info.TimeShiftURL, info, m3u8Mapping)
 
 	}
@@ -660,17 +659,17 @@ func GenerateAndUploadXmlTvDays7() {
 }
 func autoGroupByName(name string) string {
 	if strings.Contains(name, "CCTV") {
-		return "央视"
+		return "1.央视"
 	} else if strings.Contains(name, "卫视") {
-		return "卫视"
+		return "2.卫视"
 	} else if strings.Contains(name, "购物") {
-		return "购物"
+		return "6.购物"
 	} else if strings.Contains(name, "年级") {
-		return "空中课堂"
+		return "5.空中课堂"
 	} else if strings.Contains(name, "百事通") {
-		return "百事通"
+		return "3.百事通"
 	} else if strings.Contains(name, "影") {
-		return "电影"
+		return "4.电影"
 	}
-	return "其他"
+	return "7.其他"
 }

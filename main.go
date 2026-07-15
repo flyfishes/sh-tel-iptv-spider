@@ -5,6 +5,7 @@ import (
 	"iptv-spider-sh/initialize"
 	"iptv-spider-sh/modules/auth"
 	"iptv-spider-sh/router"
+	"iptv-spider-sh/router/api"
 
 	"github.com/golang-module/carbon"
 	"github.com/kataras/iris/v12"
@@ -56,6 +57,9 @@ func main() {
 		client.FetchChannelList()
 		// 拉取一次节目单，如果近期更新过，则不会实际运行
 		client.FetchChannelProg(false)
+		respBytes := auth.GenerateDiyp("", "", "", "")
+		api.SaveToLogDir(respBytes, "iptvdiyp.txt")
+
 	}()
 
 	app.ConfigureHost(configHost)

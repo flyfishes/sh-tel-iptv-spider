@@ -1,13 +1,14 @@
 package api
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/modules/auth"
 	"iptv-spider-sh/utils"
 	"strconv"
 	"time"
+
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 )
 
 // generateXmlTv 生成xmlTv文件 节目去重
@@ -34,6 +35,7 @@ func generateXmlTv(ctx iris.Context) {
 		epgBytes, err := auth.GenerateXmlTv(d)
 		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
 		global.CACHE.Put(reqMD5Key, epgBytes, time.Minute*timeOut)
+		SaveToLogDir(epgBytes, "epg.xml")
 		return epgBytes, err
 	})
 	if err != nil {

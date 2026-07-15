@@ -26,7 +26,7 @@ func (m *Writer) WriteHeader() {
 }
 
 func (m *Writer) WriteGroupHeader(groupName string) {
-	m.buf.WriteString(fmt.Sprintf("%s,#genre#\n", groupName))
+	m.buf.WriteString(fmt.Sprintf("\n%s,#genre#\n", groupName))
 }
 
 func (m *Writer) Write(uri string, info model.ChannelInfo, ext model.M3u8Mapping) {
