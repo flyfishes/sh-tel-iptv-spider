@@ -218,13 +218,13 @@ func generateDiypTxt(ctx iris.Context) {
 
 	if ctx == nil {
 		respBytes := auth.GenerateDiyp(udpxy, scheme, xteve, all)
-		SaveToLogDir(respBytes, "iptv-diyp.txt")
+		SaveToLogDir(respBytes, "iptvdiyp.txt")
 		return
 	}
-	reqMD5Key := utils.CalcMD5KeyForRequest("generateTsM3u8", bufStr)
+	reqMD5Key := utils.CalcMD5KeyForRequest("generateDiyp", bufStr)
 	// 缓存机制
 	if ref != "true" && global.CACHE.IsExist(reqMD5Key) {
-		ctx.Header("Content-Disposition", "attachment; filename=iptv-diyp.txt")
+		ctx.Header("Content-Disposition", "attachment; filename=iptvdiyp.txt")
 		ctx.Binary(global.CACHE.Get(reqMD5Key).([]byte))
 		return
 	}
@@ -235,7 +235,7 @@ func generateDiypTxt(ctx iris.Context) {
 		global.CACHE.Put(reqMD5Key, respBytes, time.Minute*timeOut)
 		return respBytes, nil
 	})
-	ctx.Header("Content-Disposition", "attachment; filename=iptv-diyp.txt")
+	ctx.Header("Content-Disposition", "attachment; filename=iptvdiyp.txt")
 	ctx.Binary(resp.([]byte))
 }
 
