@@ -230,6 +230,14 @@ func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
 		}
 	}
 
+	// 构建Exclude_Channels 映射表
+	excludeMap := make(map[string]bool)
+	for _, m := range global.CONFIG.Epg.ChannelMappings {
+		for _, ex := range m.Exclude_channels {
+			excludeMap[ex] = true
+		}
+	}
+
 	// 对 finalList 排序
 	sort.SliceStable(finalList, func(i, j int) bool {
 		nameI := finalList[i].Info.Name
@@ -262,6 +270,10 @@ func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
 	for _, item := range finalList {
 		info := item.Info
 		channel := item.Channel
+		// 排除被标记为Exclude_channels的频道
+		if excludeMap[info.Name] {
+			continue
+		}
 		// 获取频道映射信息
 		m3u8Mapping, err := getM3u8Mapping(info.CommName)
 		if err != nil {
@@ -322,9 +334,21 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 	// 去重
 	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList)
 
+	// 构建Exclude_Channels 映射表
+	excludeMap := make(map[string]bool)
+	for _, m := range global.CONFIG.Epg.ChannelMappings {
+		for _, ex := range m.Exclude_channels {
+			excludeMap[ex] = true
+		}
+	}
+
 	for _, info := range newChanInfo {
 		// 不展示
 		if !info.IsShow {
+			continue
+		}
+		// 排除被标记为Exclude_channels的频道
+		if excludeMap[info.Name] {
 			continue
 		}
 		channel := model.Channel{}
@@ -339,7 +363,7 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 			continue
 		}
 
-		uri := assemblyUrl(udpxy, scheme, xteve, channel.TimeShiftURL, "", "") //修改加上fcc端口和用户
+		uri := assemblyUrl(udpxy, scheme, xteve, channel.ChannelURL, "", "")
 		m3uWriter.Write(uri, info, m3u8Mapping)
 	}
 	return m3uWriter.Bytes()
@@ -368,10 +392,22 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 		return channelUrlsList[i].CommName < channelUrlsList[j].CommName
 	})
 
+	// 构建Exclude_Channels 映射表
+	excludeMap := make(map[string]bool)
+	for _, m := range global.CONFIG.Epg.ChannelMappings {
+		for _, ex := range m.Exclude_channels {
+			excludeMap[ex] = true
+		}
+	}
+
 	prev_groupName := ""
 	for _, info := range channelUrlsList {
 		// 不展示
 		if !info.IsShow {
+			continue
+		}
+		// 排除被标记为Exclude_channels的频道
+		if excludeMap[info.Name] {
 			continue
 		}
 		// 写入分组头
