@@ -720,27 +720,37 @@ func GenerateEpgJson(daysAgo int) ([]byte, error) {
 
 func GenerateAndUploadEpgJson() {
 	jsonBytes, _ := GenerateEpgJson(1)
-	utils.UploadToOSS("/sh/tel-epg.json", jsonBytes)
+	utils.UploadToOSS("/tv/tel-epg.json", jsonBytes)
 }
 
 func GenerateAndUploadEpgJsonDays7() {
 	jsonBytes, _ := GenerateEpgJson(7)
-	utils.UploadToOSS("/sh/tel-epg-7.json", jsonBytes)
+	utils.UploadToOSS("/tv/tel-epg-7.json", jsonBytes)
 }
 
 func GenerateAndUploadM3u() {
 	m3uBytes := GenerateM3u8("", "", "true", "")
-	utils.UploadToOSS("/sh/tel-xteve.m3u", m3uBytes)
+	utils.UploadToOSS("/tv/tel-xteve.m3u", m3uBytes)
+}
+func GenerateAndUploadDiyp(updateSite string) {
+	m3uBytes := GenerateDiyp("", "", "", "")
+	utils.SaveToLogDir(m3uBytes, "iptvdiyp.txt")
+	if updateSite == "oss" {
+		utils.UploadToOSS("/tv/iptvdiyp.txt", m3uBytes)
+	} else if updateSite == "scp" {
+		remotePath := global.CONFIG.SCP.Bucket
+		utils.ScpCopy(fmt.Sprintf("%s/tv/iptvdiyp.txt", global.CONFIG.Zap.Director), remotePath, global.CONFIG.SCP.EndPoint, global.CONFIG.SCP.AccessKey, global.CONFIG.SCP.SecretKey)
+	}
 }
 
 func GenerateAndUploadXmlTv() {
 	xmlTvBytes, _ := GenerateXmlTv(1)
-	utils.UploadToOSS("/sh/tel-epg.xml", xmlTvBytes)
+	utils.UploadToOSS("/tv/tel-epg.xml", xmlTvBytes)
 }
 
 func GenerateAndUploadXmlTvDays7() {
 	xmlTvBytes, _ := GenerateXmlTv(7)
-	utils.UploadToOSS("/sh/tel-epg-7.xml", xmlTvBytes)
+	utils.UploadToOSS("/tv/tel-epg-7.xml", xmlTvBytes)
 }
 func autoGroupByName(name string) string {
 	if strings.Contains(name, "CCTV") {

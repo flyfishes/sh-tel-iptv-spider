@@ -5,7 +5,6 @@ import (
 	"iptv-spider-sh/initialize"
 	"iptv-spider-sh/modules/auth"
 	"iptv-spider-sh/router"
-	"iptv-spider-sh/router/api"
 
 	"github.com/golang-module/carbon"
 	"github.com/kataras/iris/v12"
@@ -57,9 +56,7 @@ func main() {
 		client.FetchChannelList()
 		// 拉取一次节目单，如果近期更新过，则不会实际运行
 		client.FetchChannelProg(false)
-		respBytes := auth.GenerateDiyp("", "", "", "")
-		api.SaveToLogDir(respBytes, "iptvdiyp.txt")
-
+		auth.GenerateAndUploadDiyp("")
 	}()
 
 	app.ConfigureHost(configHost)
@@ -97,22 +94,43 @@ func addDataCleanCron() {
 
 func addUploadCosCron() {
 	ossConfig := global.CONFIG.OSS
-	if !ossConfig.Enable || ossConfig.UploadCron == "" {
+	scpConfig := global.CONFIG.SCP
+	if (ossConfig.Enable || ossConfig.UploadCron == "") && (scpConfig.Enable || scpConfig.UploadCron == "") {
 		return
 	}
 	var taskId0, taskId1 cron.EntryID
-	taskId0, _ = global.CRON.AddFunc(ossConfig.UploadCron, func() {
-		auth.GenerateAndUploadM3u()
-		auth.GenerateAndUploadXmlTv()
-		logNexTime("Task: 上传文件至COS;\t\tNextTime: ", taskId0)
-	})
-	logNexTime("Add Task: 上传文件至COS;\t\tNextTime: ", taskId0)
+	if ossConfig.Enable {
+		taskId0, _ = global.CRON.AddFunc(ossConfig.UploadCron, func() {
+			auth.GenerateAndUploadM3u()
+			auth.GenerateAndUploadXmlTv()
+			auth.GenerateAndUploadDiyp("oss")
+			logNexTime("Task: 上传文件至COS;\t\tNextTime: ", taskId0)
+		})
+		logNexTime("Add Task: 上传文件至COS;\t\tNextTime: ", taskId0)
 
-	taskId1, _ = global.CRON.AddFunc("0 25 0,12 * * *", func() {
-		auth.GenerateAndUploadXmlTvDays7()
-		logNexTime("Task: 上传至COS-7D;\t\t\tNextTime: ", taskId1)
-	})
-	logNexTime("Add Task: 上传至COS-7D;\t\t\tNextTime: ", taskId1)
+		taskId1, _ = global.CRON.AddFunc("0 25 0,12 * * *", func() {
+			auth.GenerateAndUploadXmlTvDays7()
+			logNexTime("Task: 上传至COS-7D;\t\t\tNextTime: ", taskId1)
+		})
+		logNexTime("Add Task: 上传至COS-7D;\t\t\tNextTime: ", taskId1)
+	}
+	if scpConfig.Enable {
+		taskId0, _ = global.CRON.AddFunc(scpConfig.UploadCron, func() {
+			auth.GenerateAndUploadM3u()
+			auth.GenerateAndUploadXmlTv()
+			auth.GenerateAndUploadDiyp("scp")
+			logNexTime("Task: 上传文件至scp;\t\tNextTime: ", taskId0)
+		})
+		logNexTime("Add Task: 上传文件至scp;\t\tNextTime: ", taskId0)
+
+		/*
+			taskId1, _ = global.CRON.AddFunc("0 25 0,12 * * *", func() {
+				auth.GenerateAndUploadXmlTvDays7()
+				logNexTime("Task: 上传至scp-7D;\t\t\tNextTime: ", taskId1)
+			})
+			logNexTime("Add Task: 上传至scp-7D;\t\t\tNextTime: ", taskId1)
+		*/
+	}
 }
 
 func logNexTime(msg string, id cron.EntryID) {

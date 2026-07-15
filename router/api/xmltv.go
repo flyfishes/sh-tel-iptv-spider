@@ -35,7 +35,7 @@ func generateXmlTv(ctx iris.Context) {
 		epgBytes, err := auth.GenerateXmlTv(d)
 		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
 		global.CACHE.Put(reqMD5Key, epgBytes, time.Minute*timeOut)
-		SaveToLogDir(epgBytes, "epg.xml")
+		utils.SaveToLogDir(epgBytes, "epg.xml")
 		return epgBytes, err
 	})
 	if err != nil {

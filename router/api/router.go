@@ -1,12 +1,9 @@
 package api
 
 import (
-	"fmt"
 	"iptv-spider-sh/global"
 	"iptv-spider-sh/modules/auth"
 	"iptv-spider-sh/utils"
-	"os"
-	"path"
 	"strconv"
 	"time"
 
@@ -89,7 +86,7 @@ func generateEpgJson(ctx iris.Context) {
 		}
 		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
 		global.CACHE.Put(reqMD5Key, epgBytes, time.Minute*timeOut)
-		SaveToLogDir(epgBytes, "epg.json")
+		utils.SaveToLogDir(epgBytes, "epg.json")
 		return epgBytes, nil
 	})
 
@@ -140,7 +137,7 @@ func generateM3u8(ctx iris.Context) {
 	}
 	if ctx == nil {
 		respBytes := auth.GenerateM3u8(udpxy, scheme, xteve, all)
-		SaveToLogDir(respBytes, "iptv.m3u")
+		utils.SaveToLogDir(respBytes, "iptv.m3u")
 		return
 	}
 	reqMD5Key := utils.CalcMD5KeyForRequest("generateM3u8", bufStr)
@@ -191,7 +188,7 @@ func generateTsM3u8(ctx iris.Context) {
 		respBytes := auth.GenerateTimeShiftM3u8(udpxy, scheme, xteve, all)
 		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
 		global.CACHE.Put(reqMD5Key, respBytes, time.Minute*timeOut)
-		SaveToLogDir(respBytes, "iptv-ts.m3u")
+		utils.SaveToLogDir(respBytes, "iptv-ts.m3u")
 		return respBytes, nil
 	})
 	ctx.Header("Content-Disposition", "attachment; filename=iptv-ts.m3u")
@@ -219,7 +216,7 @@ func generateDiypTxt(ctx iris.Context) {
 
 	if ctx == nil {
 		respBytes := auth.GenerateDiyp(udpxy, scheme, xteve, all)
-		SaveToLogDir(respBytes, "iptvdiyp.txt")
+		utils.SaveToLogDir(respBytes, "iptvdiyp.txt")
 		return
 	}
 	reqMD5Key := utils.CalcMD5KeyForRequest("generateDiyp", bufStr)
@@ -238,13 +235,4 @@ func generateDiypTxt(ctx iris.Context) {
 	})
 	ctx.Header("Content-Disposition", "attachment; filename=iptvdiyp.txt")
 	ctx.Binary(resp.([]byte))
-}
-
-func SaveToLogDir(data []byte, filename string) {
-	logDir := fmt.Sprintf("%s/tv", global.CONFIG.Zap.Director)
-	if ok, _ := utils.PathExists(logDir); !ok {
-		os.MkdirAll(logDir, os.ModePerm)
-	}
-	filePath := path.Join(logDir, filename)
-	os.WriteFile(filePath, data, 0644)
 }
