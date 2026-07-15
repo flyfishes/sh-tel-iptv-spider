@@ -410,8 +410,8 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 		}
 	}
 	for i, item := range channelUrlsList {
-		fmt.Printf("%d. Name: %s, CommName: %s, Group: %s\n",
-			i+1, item.Name, item.CommName, item.Group)
+		fmt.Printf("%d. Name: %s[%d], CommName: %s, Group: %s\n",
+			i+1, item.Name, orderMap[item.Name], item.CommName, item.Group)
 	}
 	SortChannelsByFields(channelUrlsList, orderMap,
 		func(item model.ChannelUrlInfo) string { return item.Name },
@@ -419,8 +419,8 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 		func(item model.ChannelUrlInfo) string { return item.CommName },
 	)
 	for i, item := range channelUrlsList {
-		fmt.Printf(">>%d. Name: %s, CommName: %s, Group: %s\n",
-			i+1, item.Name, item.CommName, item.Group)
+		fmt.Printf(">>%d. Name: %s[%d], CommName: %s, Group: %s\n",
+			i+1, item.Name, orderMap[item.Name], item.CommName, item.Group)
 	}
 	/*
 		// 对根据channelUrlsList.Name 进行排序
