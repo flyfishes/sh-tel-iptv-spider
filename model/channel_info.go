@@ -30,6 +30,7 @@ type ChannelInfo struct {
 	CommName      string         `gorm:"comment:通用标题" json:"-"`
 	LastFetchTime FlexTime       `gorm:"comment:节目单最后更新时间" json:"-"`
 	EpgUpdatedAt  FlexTime       `gorm:"comment:epg节目单最后更新时间" json:"-"`
+	Group         string         `gorm:"comment:epg分组名称" json:"-"`
 }
 
 // ChannelUrlInfo 结合 channels 和 channel_infos 的查询结果

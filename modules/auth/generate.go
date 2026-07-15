@@ -58,6 +58,10 @@ func getChannelInfoList(orderBy string) ([]model.ChannelInfo, error) {
 		return nil, err
 	}
 
+	// 填充分组信息
+	for i := range channelInfoList {
+		channelInfoList[i].Group = autoGroupByName(channelInfoList[i].Name)
+	}
 	return channelInfoList, nil
 }
 
@@ -341,15 +345,11 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 			orderMap[n.Name] = i
 		}
 	}
-	// 对根据channelUrlsList.Name 进行排序
-	sort.SliceStable(newChanInfo, func(i, j int) bool {
-		orderI, okI := orderMap[newChanInfo[i].Name]
-		orderJ, okJ := orderMap[newChanInfo[j].Name]
-		if okI != okJ {
-			return okI
-		}
-		return orderI < orderJ
-	})
+	SortChannelsByFields(channelInfoList, orderMap,
+		func(item model.ChannelInfo) string { return item.Name },
+		func(item model.ChannelInfo) string { return item.Group },
+		func(item model.ChannelInfo) string { return item.CommName },
+	)
 
 	// 构建Exclude_Channels 映射表
 	excludeMap := make(map[string]bool)
@@ -409,23 +409,29 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 			orderMap[n.Name] = i
 		}
 	}
-	// 对根据channelUrlsList.Name 进行排序
-	sort.SliceStable(channelUrlsList, func(i, j int) bool {
-		orderI, okI := orderMap[channelUrlsList[i].Name]
-		orderJ, okJ := orderMap[channelUrlsList[j].Name]
-		if okI != okJ {
-			return okI
-		}
-		return orderI < orderJ
-	})
-	// 根据channelUrlsList.Group以节目分组进行排序, 相同分组内再以CommName排序
-	sort.SliceStable(channelUrlsList, func(i, j int) bool {
-		if channelUrlsList[i].Group != channelUrlsList[j].Group {
-			return channelUrlsList[i].Group < channelUrlsList[j].Group
-		}
-		return channelUrlsList[i].CommName < channelUrlsList[j].CommName
-	})
-
+	SortChannelsByFields(channelUrlsList, orderMap,
+		func(item model.ChannelUrlInfo) string { return item.Name },
+		func(item model.ChannelUrlInfo) string { return item.Group },
+		func(item model.ChannelUrlInfo) string { return item.CommName },
+	)
+	/*
+		// 对根据channelUrlsList.Name 进行排序
+		sort.SliceStable(channelUrlsList, func(i, j int) bool {
+			orderI, okI := orderMap[channelUrlsList[i].Name]
+			orderJ, okJ := orderMap[channelUrlsList[j].Name]
+			if okI != okJ {
+				return okI
+			}
+			return orderI < orderJ
+		})
+		// 根据channelUrlsList.Group以节目分组进行排序, 相同分组内再以CommName排序
+		sort.SliceStable(channelUrlsList, func(i, j int) bool {
+			if channelUrlsList[i].Group != channelUrlsList[j].Group {
+				return channelUrlsList[i].Group < channelUrlsList[j].Group
+			}
+			return channelUrlsList[i].CommName < channelUrlsList[j].CommName
+		})
+	*/
 	// 构建Exclude_Channels 映射表
 	excludeMap := make(map[string]bool)
 	for _, m := range global.CONFIG.Epg.ChannelMappings {
@@ -456,7 +462,7 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 			continue
 		}
 
-		uri := assemblyUrl(udpxy, scheme, xteve, info.ChannelURL, "", "") //修改加上fcc端口和用户
+		uri := assemblyUrl(udpxy, scheme, xteve, info.ChannelURL, info.ChannelFCCIP, info.ChannelFCCPort)
 		m3uWriter.WriteDiyp(uri, info, m3u8Mapping)
 		catchupSource := ""
 		if info.TimeShiftURL != "" {

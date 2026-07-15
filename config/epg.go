@@ -11,6 +11,7 @@ type Epg struct {
 	Playseek        string           `mapstructure:"playseek" json:"playseek" yaml:"playseek"`
 	ChannelMappings []ChannelMapping `mapstructure:"channel_mappings" yaml:"channel_mappings"`
 	NameSequence    []ChannelMapping `mapstructure:"name_sequence" yaml:"name_sequence"`
+	ExcludeChannels []string         `mapstructure:"exclude_channels" yaml:"exclude_channels"` // 过滤掉的频道 CommName 列表
 }
 
 type ChannelMapping struct {
