@@ -411,19 +411,13 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 	} else {
 		global.LOG.Info("提示:节目排序配置name_sequence为空.")
 	}
-	for i, item := range channelUrlsList {
-		fmt.Printf("%d. Name: %s[%d], CommName: %s, Group: %s\n",
-			i+1, item.Name, orderMap[item.Name], item.CommName, item.Group)
-	}
+
 	SortChannelsByFields(channelUrlsList, orderMap,
 		func(item model.ChannelUrlInfo) string { return item.Name },
 		func(item model.ChannelUrlInfo) string { return item.Group },
 		func(item model.ChannelUrlInfo) string { return item.CommName },
 	)
-	for i, item := range channelUrlsList {
-		fmt.Printf(">>%d. Name: %s[%d], CommName: %s, Group: %s\n",
-			i+1, item.Name, orderMap[item.Name], item.CommName, item.Group)
-	}
+
 	/*
 		// 对根据channelUrlsList.Name 进行排序
 		sort.SliceStable(channelUrlsList, func(i, j int) bool {
