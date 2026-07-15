@@ -336,7 +336,7 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 		return nil
 	}
 	// 去重
-	newChanInfo := model.RemoveDuplicateChannelInfo(channelInfoList, false)
+	newChannelInfoList := model.RemoveDuplicateChannelInfo(channelInfoList, false)
 
 	// 构建 name_sequence 顺序表
 	orderMap := make(map[string]int)
@@ -345,7 +345,7 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 			orderMap[n.Name] = i
 		}
 	}
-	SortChannelsByFields(channelInfoList, orderMap,
+	SortChannelsByFields(newChannelInfoList, orderMap,
 		func(item model.ChannelInfo) string { return item.Name },
 		func(item model.ChannelInfo) string { return item.Group },
 		func(item model.ChannelInfo) string { return item.CommName },
@@ -359,7 +359,7 @@ func GenerateTimeShiftM3u8(udpxy, scheme, xteve, all string) []byte {
 		}
 	}
 
-	for _, info := range newChanInfo {
+	for _, info := range newChannelInfoList {
 		// 不展示
 		if !info.IsShow {
 			continue

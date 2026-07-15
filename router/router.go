@@ -24,9 +24,10 @@ func index(ctx iris.Context) {
 	ctx.WriteString(`IPTV Spider API
 
 频道列表接口:
-  GET /api/m3u8     - 生成M3U8频道列表文件
+  GET /api/diyp     - 生成diyp文件
+  GET /api/m3u8     - 生成M3U8频道列表文件(含回放)
     参数: udpxy=url, scheme=(rtsp|rtp|igmp)://, xteve=false|true, all=true, ref=false|true
-  GET /api/tsM3u8   - 生成时移M3U8文件
+  GET /api/tsM3u8   - 生成直播M3U8文件
     参数: ref=false|true
 
 节目单接口:
