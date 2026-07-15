@@ -458,7 +458,12 @@ func GenerateDiyp(udpxy, scheme, xteve, all string) []byte {
 
 		uri := assemblyUrl(udpxy, scheme, xteve, info.ChannelURL, "", "") //修改加上fcc端口和用户
 		m3uWriter.WriteDiyp(uri, info, m3u8Mapping)
-		m3uWriter.WriteDiyp(info.TimeShiftURL, info, m3u8Mapping)
+		catchupSource := ""
+		if info.TimeShiftURL != "" {
+			trimmed := strings.TrimPrefix(info.TimeShiftURL, "rtsp://")
+			catchupSource = fmt.Sprintf("%s%s%s", global.CONFIG.Epg.RtspUrl, trimmed, global.CONFIG.Epg.Playseek)
+			m3uWriter.WriteDiyp(catchupSource, info, m3u8Mapping)
+		}
 
 	}
 	return m3uWriter.Bytes()
