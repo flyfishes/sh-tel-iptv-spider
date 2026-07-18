@@ -313,7 +313,7 @@ func GenerateM3u8(udpxy, scheme, xteve, all, ku9 string) []byte {
 			trimmed := strings.TrimPrefix(channel.TimeShiftURL, "rtsp://")
 			playseek := global.CONFIG.Epg.Playseek
 			if ku9 == "true" {
-			    playseek := "&playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}"
+			    playseek = "&playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}"
 			}
 			catchupSource = fmt.Sprintf("%s%s%s", global.CONFIG.Epg.RtspUrl, trimmed, playseek)
 		}
