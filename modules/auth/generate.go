@@ -734,7 +734,7 @@ func GenerateAndUploadEpgJsonDays7() {
 }
 
 func GenerateAndUploadM3u() {
-	m3uBytes := GenerateM3u8("", "", "true", "")
+	m3uBytes := GenerateM3u8("", "", "true", "", "")
 	utils.UploadToOSS("/tv/tel-xteve.m3u", m3uBytes)
 }
 func GenerateAndUploadDiyp(updateSite string) {
