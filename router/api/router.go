@@ -123,6 +123,7 @@ func generateM3u8(ctx iris.Context) {
 	xteve := ctx.FormValue("xteve")
 	all := ctx.FormValue("all")
 	ref := ctx.FormValue("ref")
+	ku9 := ctx.FormValue("ku9")
 
 	var bufStr string
 	if xteve == "true" {
@@ -135,8 +136,11 @@ func generateM3u8(ctx iris.Context) {
 	if all == "true" {
 		bufStr += all
 	}
+	if ku9 == "true" {
+		bufStr += ku9
+	}
 	if ctx == nil {
-		respBytes := auth.GenerateM3u8(udpxy, scheme, xteve, all)
+		respBytes := auth.GenerateM3u8(udpxy, scheme, xteve, all, ku9)
 		utils.SaveToLogDir(respBytes, "iptv.m3u")
 		return
 	}
@@ -149,7 +153,7 @@ func generateM3u8(ctx iris.Context) {
 	}
 	// 并发时合并请求
 	resp, _, _ := global.ConcurrencyControl.Do(reqMD5Key, func() (interface{}, error) {
-		respBytes := auth.GenerateM3u8(udpxy, scheme, xteve, all)
+		respBytes := auth.GenerateM3u8(udpxy, scheme, xteve, all, ku9)
 		timeOut := time.Duration(global.CONFIG.Cache.DefTimeOut)
 		global.CACHE.Put(reqMD5Key, respBytes, time.Minute*timeOut)
 		return respBytes, nil
