@@ -109,7 +109,7 @@ func getM3u8Mapping(commName string) (model.M3u8Mapping, error) {
 	return m3u8Mapping, nil
 }
 
-func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
+func GenerateM3u8(udpxy, scheme, xteve, all, ku9 string) []byte {
 	// 配置空值检查
 	if global.CONFIG == nil || global.CONFIG.Epg.XmlUrl == "" {
 		global.LOG.Error("配置文件未正确加载:Epg.XmlUrl")
@@ -311,7 +311,12 @@ func GenerateM3u8(udpxy, scheme, xteve, all string) []byte {
 		catchupSource := ""
 		if channel.TimeShiftURL != "" {
 			trimmed := strings.TrimPrefix(channel.TimeShiftURL, "rtsp://")
-			catchupSource = fmt.Sprintf("%s%s%s", global.CONFIG.Epg.RtspUrl, trimmed, global.CONFIG.Epg.Playseek)
+			if ku9 == "true" {
+			    playseek := "&playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}"
+			}else {
+			    playseek := global.CONFIG.Epg.Playseek
+			}
+			catchupSource = fmt.Sprintf("%s%s%s", global.CONFIG.Epg.RtspUrl, trimmed, playseek)
 		}
 
 		m3uWriter.WriteWithCatchup(uri, catchupSource, info, m3u8Mapping)
