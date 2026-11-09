@@ -159,19 +159,66 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 		var respJson model.JsonResponse[model.EPGDetails]
 		err := json.Unmarshal(resp.GetRespBytes(), &respJson)
 		if err != nil {
-			global.LOG.Error("FetchChannelProg Unmarshal Err: "+err.Error(),
+			global.LOG.Error("FetchChannelProg: Unmarshal Err: "+err.Error(),
 				zap.Any("SessionID", c.JSESSIONID),
 				zap.Any("Params", params),
 				zap.Any("resp", respJson))
-			return
-		}
-		if len(respJson.Data) == 0 {
-			global.LOG.Warn("FetchChannelProg Err: No Data!",
-				zap.Any("SessionID", c.JSESSIONID),
-				zap.Any("Params", params),
-				zap.Any("resp", respJson))
+			//return //单个频道解析失败就终止整个循环，会导致后续频道全部不更新。除非你确认解析失败意味着 session 彻底坏了，否则应改为 continue（或根据错误类型判断）。
 			continue
 		}
+		if respJson.ErrCode != "0" && respJson.ErrCode != "" {
+			if respJson.ErrCode == "051002" {
+				global.LOG.Warn("FetchChannelProg: NO DATA", zap.String("comm", ch.CommName), ...)
+			} else {
+				global.LOG.Error("FetchChannelProg: 业务错误", zap.String("errCode", respJson.ErrCode), zap.String("errMsg", respJson.ErrMsg))
+			}
+			continue
+		}
+		
+		// 1. 先构造待插入数据，过滤掉过期数据
+		daysAgo := now.SubDays(7).TimestampMilli()
+		des := make([]model.EPGDetails, 0, len(respJson.Data))
+		for _, details := range respJson.Data {
+			if details.EndTime < daysAgo {
+				continue
+			}
+			details.CommName = ch.CommName
+			// 关键：清空主键，交给数据库自增，避免跨频道覆盖
+			details.ID = 0
+			des = append(des, details)
+		}
+
+		// 2. 若过滤后为空，跳过删除，避免把旧数据清空
+		if len(des) == 0 {
+			global.LOG.Warn("FetchChannelProg 过滤后无有效数据，跳过删除以保留旧数据",
+				zap.String("comm_name", ch.CommName))
+			continue
+		}
+
+		// 3. 事务内：先删后插，保证原子性
+		err = global.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Unscoped().
+				Where("comm_name = ?", ch.CommName).
+				Delete(&model.EPGDetails{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Create(&des).Error; err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			global.LOG.Error("FetchChannelProg 更新EPG事务失败: "+err.Error(),
+				zap.String("comm_name", ch.CommName))
+			continue // 事务回滚，旧数据保留
+		}
+
+		// 4. 更新抓取时间（可放到事务内，见方案 B）
+		global.DB.Model(&model.ChannelInfo{}).
+			Where("comm_name = ?", ch.CommName).
+			Updates(model.ChannelInfo{LastFetchTime: model.FlexTime{Time: time.Now()}})
+			
+		/*
 		// 避免节目时间重合问题，删除所有老数据
 		global.DB.Unscoped().Where("comm_name = ?", ch.CommName).Delete(&model.EPGDetails{})
 		daysAgo := now.SubDays(7).TimestampMilli()
@@ -189,6 +236,7 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 			Columns:   []clause.Column{{Name: "id"}},
 			UpdateAll: true,
 		}).Create(&des)
+		*/
 		global.LOG.Info(fmt.Sprintf("更新节目信息[%d]: %s", i+1, ch.CommName))
 		global.DB.Model(&model.ChannelInfo{}).
 			Where("comm_name = ?", ch.CommName).
