@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+    "net/url"
 
 	"github.com/golang-module/carbon"
 	"go.uber.org/zap"
@@ -169,12 +170,22 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 		}
 		if respJson.ErrCode != "0" && respJson.ErrCode != "" {
 			if respJson.ErrCode == "051002" {
+				var formParts []string
+				for k, v := range params {
+					formParts = append(formParts, fmt.Sprintf("%s=%s", url.QueryEscape(k), url.QueryEscape(v)))
+				}
+				formBody := strings.Join(formParts, "&")
+
+				curlCmd := fmt.Sprintf(
+					`curl -X POST '%s' -H 'Content-Type: application/x-www-form-urlencoded' -H 'Cookie: JSESSIONID=%s' --data-raw '%s'`,
+					uri, c.JSESSIONID, formBody,
+				)
 				global.LOG.Warn("FetchChannelProg: NO DATA",
 					zap.String("comm", ch.CommName),
 					zap.String("channelID", ch.ChID),
 					zap.String("errCode", respJson.ErrCode),
 					zap.String("errMsg", respJson.ErrMsg),
-					zap.String("url", uri),
+					zap.String("url", curlCmd),
 				)
 			} else {
 				global.LOG.Error("FetchChannelProg: 业务错误", zap.String("errCode", respJson.ErrCode), zap.String("errMsg", respJson.ErrMsg))
@@ -182,7 +193,14 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 			continue
 		}
 		
-		// 1. 先构造待插入数据，过滤掉过期数据
+		// 避免节目时间重合问题，删除所有老数据,事务处理
+		err = global.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Unscoped().
+			Where("comm_name = ?", ch.CommName).
+			Delete(&model.EPGDetails{}).Error; err != nil {
+			return err
+		}
+
 		daysAgo := now.SubDays(7).TimestampMilli()
 		des := make([]model.EPGDetails, 0, len(respJson.Data))
 		for _, details := range respJson.Data {
@@ -190,40 +208,20 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 				continue
 			}
 			details.CommName = ch.CommName
-			// 关键：清空主键，交给数据库自增，避免跨频道覆盖
 			des = append(des, details)
 		}
 
-		// 2. 若过滤后为空，跳过删除，避免把旧数据清空
-		if len(des) == 0 {
-			global.LOG.Warn("FetchChannelProg 过滤后无有效数据，跳过删除以保留旧数据",
-				zap.String("comm_name", ch.CommName))
-			continue
-		}
-
-		// 3. 事务内：先删后插，保证原子性
-		err = global.DB.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Unscoped().
-				Where("comm_name = ?", ch.CommName).
-				Delete(&model.EPGDetails{}).Error; err != nil {
+		if err := tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},UpdateAll: true,}).Create(&des).Error; err != nil {
 				return err
 			}
-			if err := tx.Create(&des).Error; err != nil {
-				return err
-			}
-			return nil
+				return nil
 		})
 		if err != nil {
-			global.LOG.Error("FetchChannelProg 更新EPG事务失败: "+err.Error(),
-				zap.String("comm_name", ch.CommName))
-			continue // 事务回滚，旧数据保留
+			global.LOG.Error("FetchChannelProg 更新EPG事务失败: "+err.Error(), zap.String("comm", ch.CommName))
+			continue
 		}
-
-		// 4. 更新抓取时间（可放到事务内，见方案 B）
-		global.DB.Model(&model.ChannelInfo{}).
-			Where("comm_name = ?", ch.CommName).
-			Updates(model.ChannelInfo{LastFetchTime: model.FlexTime{Time: time.Now()}})
-			
+		
 		/*
 		// 避免节目时间重合问题，删除所有老数据
 		global.DB.Unscoped().Where("comm_name = ?", ch.CommName).Delete(&model.EPGDetails{})
