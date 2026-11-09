@@ -12,6 +12,7 @@ import (
 	"github.com/golang-module/carbon"
 	"go.uber.org/zap"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm"
 )
 
 func (c *Client) checkSessionState() error {
@@ -190,7 +191,6 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 			}
 			details.CommName = ch.CommName
 			// 关键：清空主键，交给数据库自增，避免跨频道覆盖
-			details.ID = 0
 			des = append(des, details)
 		}
 
