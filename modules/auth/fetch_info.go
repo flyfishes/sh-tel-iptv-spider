@@ -241,7 +241,7 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 			UpdateAll: true,
 		}).Create(&des)
 		*/
-		global.LOG.Info(fmt.Sprintf("更新节目信息[%d]: %s", i+1, ch.CommName))
+		global.LOG.Info(fmt.Sprintf("更新节目EPG信息[%d]: %s", i+1, ch.CommName))
 		global.DB.Model(&model.ChannelInfo{}).
 			Where("comm_name = ?", ch.CommName).
 			Updates(model.ChannelInfo{LastFetchTime: model.FlexTime{Time: time.Now()}})

@@ -41,7 +41,7 @@ func main() {
 	router.InitRouters(app)
 
 	stb := global.CONFIG.Stb
-	client, err := auth.NewGlobalClient(stb.UID, stb.SN, stb.MAC, stb.IP)
+	client, err := auth.NewGlobalClient(stb)
 	if err != nil {
 		global.LOG.Error("New AuthClient: " + err.Error())
 		return

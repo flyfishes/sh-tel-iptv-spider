@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"iptv-spider-sh/global"
+	"iptv-spider-sh/config"
 	"iptv-spider-sh/model"
 	"iptv-spider-sh/modules/http_client"
 	"iptv-spider-sh/modules/jsvm"
@@ -141,45 +142,45 @@ func (c *Client) updateCookies() {
 	})
 }
 
-func NewClient(uid, sn, mac, ip string, options ...ClientOption) (*Client, error) {
+func NewClient(stb config.Stb, options ...ClientOption) (*Client, error) {
 	// 验证参数
-	if !utils.CheckUserID(uid) {
+	if !utils.CheckUserID(stb.UID) {
 		return nil, ErrUserID
 	}
-	if !utils.CheckSNCode(sn) {
+	if !utils.CheckSNCode(stb.SN) {
 		return nil, ErrSNCode
 	}
-	if !utils.CheckMacAddressV1(mac) {
+	if !utils.CheckMacAddressV1(stb.MAC) {
 		return nil, ErrMacAddr
 	}
-	if !utils.CheckIPv4Address(ip) {
+	if !utils.CheckIPv4Address(stb.IP) {
 		return nil, ErrIPAddr
 	}
 
 	c := &Client{
 		jsVM: jsvm.New(),
 		baseConfig: baseConfig{
-			userID:           uid,
-			sn:               sn,
-			macAddr:          mac,
-			ip:               ip,
-			userAgent:        "webkit;Resolution(PAL,720P,1080P,2106P,4K)",
-			pre4kLogAuthAddr: "222.68.208.73:7001",
-			stbType:          "B860A",
+			userID:           stb.UID,
+			sn:               stb.SN,
+			macAddr:          stb.MAC,
+			ip:               stb.IP,
+			userAgent:        "webkit;Resolution(PAL,720P,1080P,2160P,4K)",
+			pre4kLogAuthAddr: stb.AuthHost,
+			stbType:          stb.Type,
 		},
 	}
 	for _, opt := range options {
 		opt(c)
 	}
 	c.httpClient = http_client.NewHttpClient(http_client.WithUserAgent(c.userAgent))
-	c.UID = uid
+	c.UID = stb.UID
 	err := c.fetchAuthInfoFormDB()
 	return c, err
 }
 
-func NewGlobalClient(uid, sn, mac, ip string, options ...ClientOption) (client *Client, err error) {
+func NewGlobalClient(stb config.Stb, options ...ClientOption) (client *Client, err error) {
 	if globalClient == nil {
-		globalClient, err = NewClient(uid, sn, mac, ip, options...)
+		globalClient, err = NewClient(stb, options...)
 		if err != nil {
 			return nil, err
 		}
