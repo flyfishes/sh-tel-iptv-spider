@@ -168,7 +168,13 @@ func (c *Client) FetchChannelProg(forceUpdate bool) {
 		}
 		if respJson.ErrCode != "0" && respJson.ErrCode != "" {
 			if respJson.ErrCode == "051002" {
-				global.LOG.Warn("FetchChannelProg: NO DATA", zap.String("comm", ch.CommName), ...)
+				global.LOG.Warn("FetchChannelProg: NO DATA",
+					zap.String("comm", ch.CommName),
+					zap.String("channelID", ch.ChID),
+					zap.String("errCode", respJson.ErrCode),
+					zap.String("errMsg", respJson.ErrMsg),
+					zap.String("url", uri),
+				)
 			} else {
 				global.LOG.Error("FetchChannelProg: 业务错误", zap.String("errCode", respJson.ErrCode), zap.String("errMsg", respJson.ErrMsg))
 			}
